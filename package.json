@@ -1,0 +1,50 @@
+{
+  "name": "tabletop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "webpack": "webpack",
+    "webpack:watch": "webpack --watch",
+    "fb:login": "firebase login",
+    "fb:init": "firebase init",
+    "fb:deploy": "firebase deploy",
+    "fb:serve": "firebase serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexGalichenko/tabletop.git"
+  },
+  "author": "Alexander Galichenko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AlexGalichenko/tabletop/issues"
+  },
+  "homepage": "https://github.com/AlexGalichenko/tabletop#readme",
+  "dependencies": {
+    "firebase": "^7.14.3",
+    "install": "^0.13.0",
+    "interactjs": "^1.9.14",
+    "uniqid": "^5.2.0",
+    "vue": "^2.6.11",
+    "vue-material": "^1.0.0-beta-13",
+    "vue-router": "^3.1.6",
+    "vuedraggable": "^2.23.2",
+    "vuex": "^3.4.0",
+    "vuex-router-sync": "^5.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.6",
+    "babel-loader": "^8.1.0",
+    "css-loader": "^3.4.0",
+    "file-loader": "^5.0.2",
+    "firebase-tools": "^8.2.0",
+    "html-webpack-plugin": "^4.3.0",
+    "style-loader": "^1.1.1",
+    "vue-loader": "^15.8.3",
+    "vue-template-compiler": "^2.6.11",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "latest"
+  }
+}
