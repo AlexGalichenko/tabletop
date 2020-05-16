@@ -43,7 +43,6 @@
 
 <script>
 import Table from "./Table.vue";
-import ClickOutside from "vue-click-outside";
 
 export default {
   components: {
@@ -266,10 +265,7 @@ export default {
       });
     }
   },
-  mounted() {},
-  directives: {
-    ClickOutside
-  }
+  mounted() {}
 };
 </script>
 
