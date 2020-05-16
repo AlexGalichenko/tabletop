@@ -167,7 +167,7 @@ export default {
       }
     });
 
-    interact(".container").dropzone({
+    interact(".container:not(.infinite)").dropzone({
       accept: ":not(.hand) > *",
       overlap: 0.1, //% of element
       ondragenter: function(event) {

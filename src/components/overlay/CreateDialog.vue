@@ -9,6 +9,7 @@
           <md-option value="Deck">Deck</md-option>
           <md-option value="Tile">Tile</md-option>
           <md-option value="Counter">Counter</md-option>
+          <md-option value="Container">Container</md-option>
         </md-select>
       </md-field>
 
@@ -32,12 +33,12 @@
         <md-input v-model="columns"/>
       </md-field>
 
-      <md-field v-if="['Deck', 'Tile'].includes(type)">
+      <md-field v-if="['Deck', 'Tile', 'Container'].includes(type)">
         <label>Height</label>
         <md-input v-model="height"/>
       </md-field>
 
-      <md-field v-if="['Deck', 'Tile'].includes(type)">
+      <md-field v-if="['Deck', 'Tile', 'Container'].includes(type)">
         <label>Width</label>
         <md-input v-model="width"/>
       </md-field>
@@ -46,6 +47,9 @@
         <label>Scale</label>
         <md-input v-model="scale"/>
       </md-field>
+
+      <md-checkbox v-if="['Container'].includes(type)" v-model="infinite" class="md-primary">Infinite</md-checkbox>
+
     </md-dialog-content>
 
     <md-dialog-actions>
@@ -73,7 +77,8 @@ export default {
       columns: 1,
       height: 300,
       width: 200,
-      scale: 1
+      scale: 1,
+      infinite: false
     };
   },
   computed: {},
@@ -112,6 +117,22 @@ export default {
               }
             });
           } break;
+        case "Container":
+        {
+          this.$store.dispatch("commitMutation", {
+            mutation: "createContainer",
+            params: {
+              id: uniqid(),
+              type: "container",
+              url: this.url,
+              backUrl: this.backUrl,
+              height: this.height,
+              width: this.width,
+              scale: this.scale,
+              infinite: this.infinite
+            }
+          });
+        } break;
         case "Counter":
           {
             this.$store.dispatch("commitMutation", {

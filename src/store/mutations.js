@@ -48,6 +48,23 @@ export default {
     objects.push(createdDeck);
   },
 
+  createContainer(state, params) {
+    if (!state.game.objects) {
+      state.game.objects = []
+    }
+    const objects = state.game.objects;
+    const createdContainer = {
+      ...params,
+      x: window.scrollX + 100,
+      y: window.scrollY + 100,
+      z: getZ(),
+      rotation: 0,
+      isFlipped: false
+    };
+    createdContainer.new = true;
+    objects.push(createdContainer);
+  },
+
   createTile(state, params) {
     if (!state.game.objects) {
       state.game.objects = []
@@ -85,8 +102,13 @@ export default {
   takeObjectFromContainer(state, containerId) {
     const container = state.game.objects.find(c => c.id === containerId);
     if (container.objects && container.objects.length > 0) {
-      const object = container.objects.pop();
+      const object = container.infinite 
+        ? container.objects[0]
+        : container.objects.pop();
 
+      if (container.infinite) {
+        object.id = uniqid();
+      }
       object.x = container.x + 25;
       object.y = container.y + 25;
       object.z = getZ();
