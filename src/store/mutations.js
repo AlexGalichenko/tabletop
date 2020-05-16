@@ -87,7 +87,7 @@ export default {
       state.game.objects = []
     }
     const objects = state.game.objects;
-    const createdTile = {
+    const createdCounter = {
       ...params,
       x: window.scrollX + 100,
       y: window.scrollY + 100,
@@ -95,8 +95,25 @@ export default {
       rotation: 0,
       isFlipped: false
     };
-    createdTile.new = true;
-    objects.push(createdTile);
+    createdCounter.new = true;
+    objects.push(createdCounter);
+  },
+
+  createDice(state, params) {
+    if (!state.game.objects) {
+      state.game.objects = []
+    }
+    const objects = state.game.objects;
+    const createdDice = {
+      ...params,
+      x: window.scrollX + 100,
+      y: window.scrollY + 100,
+      z: getZ(),
+      rotation: 0,
+      isFlipped: false
+    };
+    createdDice.new = true;
+    objects.push(createdDice);
   },
 
   takeObjectFromContainer(state, containerId) {
@@ -270,6 +287,12 @@ export default {
     const counter = state.game.objects.find(c => c.id === id);
     counter.count = 0;
     counter.new = true;
+  },
+
+  rollObject(state, objectId) {
+    const object = state.game.objects.find(obj => obj.id === objectId)
+    object.value = Math.ceil(Math.random() * object.edges)
+    object.new = true;
   },
 
   /* Room

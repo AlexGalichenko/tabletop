@@ -19,16 +19,20 @@
       <span class="value">{{containerCount}}</span>
     </div>
 
+    <!-- Dice Internals -->
+    <div v-if="object.type === 'dice'" class="value">{{object.value}}</div>
+
     <!-- Context Menu -->
     <md-menu md-size="big" md-direction="bottom-start" :md-active.sync="showContextMenu">
       <md-menu-content>
         <md-menu-item v-if="cardLike" @click="flip">Flip</md-menu-item>
         <md-menu-item v-if="cardLike" @click="draw">Draw</md-menu-item>
         <md-menu-item v-if="cardLike" @click="play">Play</md-menu-item>
+        <md-menu-item v-if="dice" @click="roll">Roll</md-menu-item>
         <md-menu-item @click="pin">{{pinned}}</md-menu-item>
 
-        <md-menu-item v-if="container" @click="takeObjectFromContainer">Take From Deck</md-menu-item>
-        <md-menu-item v-if="container" @click="takeObjectFromContainerToHand">Take From Deck To Hand</md-menu-item>
+        <md-menu-item v-if="container" @click="takeObjectFromContainer">Take From Container</md-menu-item>
+        <md-menu-item v-if="container" @click="takeObjectFromContainerToHand">Take From Container To Hand</md-menu-item>
         <md-menu-item v-if="container" @click="shuffleContainer">Shuffle</md-menu-item>
 
         <md-menu-item v-if="counter" @click="set0">Set 0</md-menu-item>
@@ -84,6 +88,8 @@ export default {
           return this.containerStyle;
         case "tile":
           return this.tileStyle;
+        case "dice":
+          return this.diceStyle;
       }
     },
     tileStyle() {
@@ -181,6 +187,21 @@ export default {
         transform: `${translate} ${rotate} ${scale}`
       };
     },
+    diceStyle() {
+      const translate = `translate(${this.object.x}px,${this.object.y}px)`;
+      const rotate = `rotate(${this.object.rotation}deg)`;
+      const scale = `scale(${this.object.scale})`;
+      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`
+      return {
+        border: "black solid 1px",
+        "box-shadow": shadow,
+        "z-index": this.object.z || 0,
+        height: "50px",
+        width: "50px",
+        "background-color": "gray",
+        transform: `${translate} ${rotate} ${scale}`
+      };
+    },
     cardLike() {
       return ["card", "tile"].includes(this.object.type);
     },
@@ -190,9 +211,9 @@ export default {
     counter() {
       return this.object.type === "counter";
     },
-    hasContextMenu() {
-      return this.object.type !== "counter";
-    }
+    dice() {
+      return this.object.type === "dice";
+    },
   },
   methods: {
     increaseCount() {
@@ -272,7 +293,13 @@ export default {
         mutation: "deleteObject",
         params: this.id
       });
-    }
+    },
+    roll() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "rollObject",
+        params: this.id
+      });
+    },
   },
   mounted() {}
 };
@@ -286,7 +313,14 @@ export default {
   cursor: pointer;
   background-color: gray;
 }
-.value {
+.container .value {
   background-color: gray;
+}
+
+.dice .value {
+  position: absolute;
+  font-size: 45px;
+  top: 16px;
+  left: 12px;
 }
 </style>

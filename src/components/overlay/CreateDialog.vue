@@ -10,15 +10,16 @@
           <md-option value="Tile">Tile</md-option>
           <md-option value="Counter">Counter</md-option>
           <md-option value="Container">Container</md-option>
+          <md-option value="Dice">Dice</md-option>
         </md-select>
       </md-field>
 
-      <md-field v-if="type !== 'Counter'">
+      <md-field v-if="!['Counter', 'Dice'].includes(type)">
         <label>URL</label>
         <md-input v-model="url"/>
       </md-field>
 
-      <md-field v-if="type !== 'Counter'">
+      <md-field v-if="!['Counter', 'Dice'].includes(type)">
         <label>Back URL</label>
         <md-input v-model="backUrl"/>
       </md-field>
@@ -41,6 +42,11 @@
       <md-field v-if="['Deck', 'Tile', 'Container'].includes(type)">
         <label>Width</label>
         <md-input v-model="width"/>
+      </md-field>
+
+      <md-field v-if="['Dice'].includes(type)">
+        <label>Edges</label>
+        <md-input v-model="edges"/>
       </md-field>
 
       <md-field>
@@ -78,7 +84,8 @@ export default {
       height: 300,
       width: 200,
       scale: 1,
-      infinite: false
+      infinite: false,
+      edges: 6
     };
   },
   computed: {},
@@ -143,6 +150,19 @@ export default {
                 url: this.url,
                 scale: this.scale,
                 count: 0
+              }
+            });
+          } break;
+        case "Dice":
+          {
+            this.$store.dispatch("commitMutation", {
+              mutation: "createDice",
+              params: {
+                id: uniqid(),
+                type: "dice",
+                scale: this.scale,
+                value: 1,
+                edges: this.edges
               }
             });
           } break;
