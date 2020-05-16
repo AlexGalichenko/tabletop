@@ -16,7 +16,7 @@
 
     <!-- Container Internals -->
     <div v-if="object.type === 'container'">
-      <span class="value">{{object.objects ? object.objects.length : ""}}</span>
+      <span class="value">{{containerCount}}</span>
     </div>
 
     <!-- Context Menu -->
@@ -59,11 +59,20 @@ export default {
     };
   },
   computed: {
+    containerCount() {
+      return this.object.objects 
+        ? this.object.infinite && this.object.objects.length > 0 
+          ? "Infinite"
+          : this.object.objects.length
+        : "0"
+    },
     pinned() {
       return this.object.isPinned ? "Unpin" : "Pin";
     },
     objectClass() {
-      return `draggable ${this.object.type} ${this.object.isPinned ? "pinned" : ""}`;
+      const infinite = this.object.infinite && this.object.objects && this.object.objects.length > 0 ? "infinite" : "";
+      const pinned = this.object.isPinned ? "pinned" : "";
+      return `draggable ${this.object.type} ${pinned} ${infinite}`;
     },
     style() {
       switch (this.object.type) {

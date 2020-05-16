@@ -11,5 +11,5 @@ export function getProperty(object, property) {
 }
 
 export function getZ() {
-  return new Date().getTime() - 1589532000000
+  return new Date().getTime() - 1589637000000
 }
