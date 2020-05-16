@@ -9,9 +9,9 @@
   >
     <!-- Counter Internals -->
     <div v-if="object.type === 'counter'">
-      <button @click="decreaseCount" class="minus">-</button>
-      <span class="value">{{object.count}}</span>
-      <button @click="increaseCount" class="plus">+</button>
+      <div @click="decreaseCount" class="minus">-</div>
+      <div class="value">{{object.count}}</div>
+      <div @click="increaseCount" class="plus">+</div>
     </div>
 
     <!-- Container Internals -->
@@ -32,13 +32,16 @@
         <md-menu-item @click="pin">{{pinned}}</md-menu-item>
 
         <md-menu-item v-if="container" @click="takeObjectFromContainer">Take From Container</md-menu-item>
-        <md-menu-item v-if="container" @click="takeObjectFromContainerToHand">Take From Container To Hand</md-menu-item>
+        <md-menu-item
+          v-if="container"
+          @click="takeObjectFromContainerToHand"
+        >Take From Container To Hand</md-menu-item>
         <md-menu-item v-if="container" @click="shuffleContainer">Shuffle</md-menu-item>
 
         <md-menu-item v-if="counter" @click="set0">Set 0</md-menu-item>
         <md-menu-item @click="rotateLeft">&lt;</md-menu-item>
         <md-menu-item @click="rotateRight">&gt;</md-menu-item>
-        <md-menu-item @click="$emit('showEditDialog', id)" >Edit</md-menu-item>
+        <md-menu-item @click="$emit('showEditDialog', id)">Edit</md-menu-item>
         <md-menu-item @click="deleteObject">Delete Object</md-menu-item>
       </md-menu-content>
     </md-menu>
@@ -64,17 +67,22 @@ export default {
   },
   computed: {
     containerCount() {
-      return this.object.objects 
-        ? this.object.infinite && this.object.objects.length > 0 
+      return this.object.objects
+        ? this.object.infinite && this.object.objects.length > 0
           ? "Infinite"
           : this.object.objects.length
-        : "0"
+        : "0";
     },
     pinned() {
       return this.object.isPinned ? "Unpin" : "Pin";
     },
     objectClass() {
-      const infinite = this.object.infinite && this.object.objects && this.object.objects.length > 0 ? "infinite" : "";
+      const infinite =
+        this.object.infinite &&
+        this.object.objects &&
+        this.object.objects.length > 0
+          ? "infinite"
+          : "";
       const pinned = this.object.isPinned ? "pinned" : "";
       return `draggable ${this.object.type} ${pinned} ${infinite}`;
     },
@@ -99,15 +107,16 @@ export default {
           this.$store.state.user &&
           this.object.owner !== this.$store.state.user.uid);
       const background = isFlipped ? this.object.backUrl : this.object.url;
-      const border = this.object.owner &&
-          this.$store.state.user &&
-          this.object.owner !== this.$store.state.user.uid
-        ? "2px solid gray"
-        : this.$store.state.user &&
-          this.object.owner === this.$store.state.user.uid
-        ? "2px solid green"
-        : "0px";
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`
+      const border =
+        this.object.owner &&
+        this.$store.state.user &&
+        this.object.owner !== this.$store.state.user.uid
+          ? "2px solid gray"
+          : this.$store.state.user &&
+            this.object.owner === this.$store.state.user.uid
+          ? "2px solid green"
+          : "0px";
+      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
@@ -131,18 +140,19 @@ export default {
           this.$store.state.user &&
           this.object.owner !== this.$store.state.user.uid);
       const background = isFlipped ? this.object.backUrl : this.object.url;
-      const border = this.object.owner &&
-          this.$store.state.user &&
-          this.object.owner !== this.$store.state.user.uid
-        ? "2px solid gray"
-        : this.$store.state.user &&
-          this.object.owner === this.$store.state.user.uid
-        ? "2px solid green"
-        : "0px";
+      const border =
+        this.object.owner &&
+        this.$store.state.user &&
+        this.object.owner !== this.$store.state.user.uid
+          ? "2px solid gray"
+          : this.$store.state.user &&
+            this.object.owner === this.$store.state.user.uid
+          ? "2px solid green"
+          : "0px";
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`
+      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
 
       return {
         border: border,
@@ -165,7 +175,7 @@ export default {
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`
+      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       return {
         "box-shadow": shadow,
         "background-image": `url('${this.object.url}')`,
@@ -180,7 +190,7 @@ export default {
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`
+      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       return {
         "box-shadow": shadow,
         "z-index": this.object.z || 0,
@@ -191,7 +201,7 @@ export default {
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`
+      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       return {
         border: "black solid 1px",
         "box-shadow": shadow,
@@ -213,7 +223,7 @@ export default {
     },
     dice() {
       return this.object.type === "dice";
-    },
+    }
   },
   methods: {
     increaseCount() {
@@ -299,22 +309,19 @@ export default {
         mutation: "rollObject",
         params: this.id
       });
-    },
+    }
   },
   mounted() {}
 };
 </script>
 
 <style scoped>
-.counter div:nth-child(1) {
-  background-color: gray;
-}
-.counter button {
-  cursor: pointer;
-  background-color: gray;
-}
 .container .value {
   background-color: gray;
+}
+
+.dice {
+  border-radius: 5px;
 }
 
 .dice .value {
@@ -322,5 +329,36 @@ export default {
   font-size: 45px;
   top: 16px;
   left: 12px;
+}
+
+.counter {
+  background-color: gray;
+  width: 151px;
+  height: 51px;
+  border-radius: 25px;
+  font-size: 20px;
+  border: black solid 1px;
+}
+.counter .value, .counter .minus, .counter .plus {
+  display: table-cell;
+  position: relative;
+  text-align: center;
+  vertical-align: middle;
+  height: 49px;
+  width: 49px;
+}
+.counter .minus, .counter .plus {
+  cursor: pointer;
+}
+.counter .minus:hover, .counter .plus:hover {
+  background-color: dimgray;
+}
+.counter .minus {
+  border-top-left-radius: 25px;
+  border-bottom-left-radius: 25px;
+}
+.counter .plus {
+  border-bottom-right-radius: 25px;
+  border-top-right-radius: 25px;
 }
 </style>
