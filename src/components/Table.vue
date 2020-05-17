@@ -131,12 +131,12 @@ export default {
       engine: null,
       showDropdown: false,
       dropdownTop: 0,
-      dropdownRight: 0
+      dropdownLeft: 0
     };
   },
   computed: {
     dropdownStyle() {
-      return `position: absolute; top: ${this.dropdownTop}px; right: ${this.dropdownRight}px`;
+      return `position: absolute; top: ${this.dropdownTop}px; left: ${this.dropdownLeft}px`;
     },
     ownerfull() {
       return this.$store.state.user
@@ -236,8 +236,12 @@ export default {
             currentMesh = pickInfo.pickedMesh;
             clickPosition = pickInfo;
             self.showDropdown = true;
-            self.dropdownTop = evt.clientX;
-            self.dropdownRight = evt.clientY;
+            self.dropdownTop = evt.clientY;
+            self.dropdownLeft = evt.clientX;
+            // const dropdown = document.querySelector(".md-menu-content");
+            // dropdown.style.position = "absolute";
+            // dropdown.style.left = evt.clientX;
+            // dropdown.style.left = evt.clientX;
             console.log(evt)
             console.log(currentMesh)
           }
