@@ -5,7 +5,6 @@
     @keyup.prevent.81="rotateLeft"
     @keyup.prevent.69="rotateRight"
   >
-    
     <EditDialog
       :showDialog="showEditDialog"
       :object="selectedObject"
@@ -13,17 +12,20 @@
     />
 
     <CreateDialog :showDialog="showCreateDialog" @closeCreateDialog="showCreateDialog = false" />
-    <RegisterDialog :showDialog="showRegisterDialog" @closeRegisterDialog="showRegisterDialog = false" />
+    <RegisterDialog
+      :showDialog="showRegisterDialog"
+      @closeRegisterDialog="showRegisterDialog = false"
+    />
     <ImportDialog :showDialog="showImportDialog" @closeImportDialog="showImportDialog = false" />
 
-    <GameObject
+    <!-- <GameObject
       v-for="(object, index) in ownerless"
       :key="index"
       :id="object.id"
       :data-id="object.id"
       :object="object"
       @showEditDialog="showEditDialogHandler"
-    />
+    />-->
 
     <!-- Players Box -->
     <div class="players">
@@ -50,7 +52,7 @@
       </md-speed-dial-content>
     </md-speed-dial>
 
-    <div :class="handClass">
+    <div class="hand collapsed">
       <GameObject
         v-for="(object, index) in ownerfull"
         :key="index"
@@ -59,9 +61,25 @@
         :object="object"
         @showEditDialog="showEditDialogHandler"
       />
-      <md-button class="md-primary expand" @click="toggleHand = !toggleHand">{{toggleHand ? 'Collapse' : 'Expand'}}</md-button>
+      <md-button
+        class="md-primary expand"
+        @click="toggleHand = !toggleHand"
+      >{{toggleHand ? 'Collapse' : 'Expand'}}</md-button>
     </div>
 
+    <Scene @complete="readyScene">
+      <Camera type="arcRotate"></Camera>
+      <PointLight :position="[0, 2, -1]"></PointLight>
+      <Ground :options="{width:100, height:100}">
+        <Material diffuse="#F00"></Material>
+      </Ground>
+      <Box :position="[1, 0, 0]" :scaling="[3,0.1,2]">
+        <Property name="someSceneProperty" :any="{ aProperty: 'a value' }"></Property>
+        <Material>
+          <Texture src="https://i.imgur.com/mSK2V5v.jpg"></Texture>
+        </Material>
+      </Box>
+    </Scene>
   </div>
 </template>
 
@@ -94,14 +112,20 @@ export default {
       showImportDialog: false,
       selectedObject: null,
       toggleHand: true,
+      scene: null,
+      engine: null
     };
   },
   computed: {
     ownerfull() {
-      return this.$store.state.user ? this.game.objects.filter(o => o.owner === this.$store.state.user.uid) : []
+      return this.$store.state.user
+        ? this.game.objects.filter(o => o.owner === this.$store.state.user.uid)
+        : [];
     },
     ownerless() {
-      return this.game.objects.filter(o => o.owner === undefined || o.owner === '')
+      return this.game.objects.filter(
+        o => o.owner === undefined || o.owner === ""
+      );
     },
     players() {
       return this.game.players ? Object.values(this.game.players) : [];
@@ -113,7 +137,7 @@ export default {
       return this.$store.state.game;
     },
     handClass() {
-      return `hand ${this.toggleHand ? "expanded" : "collapsed"}`
+      return `hand ${this.toggleHand ? "expanded" : "collapsed"}`;
     }
   },
   methods: {
@@ -121,19 +145,97 @@ export default {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
     },
     leftRoom() {
-        this.$store.dispatch("leftRoom", this.$store.state.user.uid);
+      this.$store.dispatch("leftRoom", this.$store.state.user.uid);
     },
     showEditDialogHandler(id) {
       this.selectedObject = this.game.objects.find(obj => obj.id === id);
       this.showEditDialog = true;
     },
     exportGame() {
-      const element = document.createElement('a');
-      const url = element.setAttribute('href', 'data:text/json;charset=utf-8,' + window.encodeURIComponent(JSON.stringify(this.game)));
-      element.setAttribute('download', 'game.json');
+      const element = document.createElement("a");
+      const url = element.setAttribute(
+        "href",
+        "data:text/json;charset=utf-8," +
+          window.encodeURIComponent(JSON.stringify(this.game))
+      );
+      element.setAttribute("download", "game.json");
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
+    },
+    readyScene(event) {
+      this.engine = event.engine;
+      this.scene = event.scene;
+
+      var canvas = event.engine.getRenderingCanvas();
+      var startingPoint;
+      var currentMesh;
+      console.log(event.scene)
+
+      var getGroundPosition = function() {
+        // Use a predicate to get position on the ground
+        var pickinfo = event.scene.pick(event.scene.pointerX, event.scene.pointerY, function(mesh) {
+          return mesh == event.scene.meshes[0];
+        });
+
+        if (pickinfo.hit) {
+          return pickinfo.pickedPoint;
+        }
+
+        return null;
+      };
+
+      var onPointerDown = function(evt) {
+        if (evt.button !== 0) {
+          return;
+        }
+
+        // check if we are under a mesh
+        var pickInfo = event.scene.pick(event.scene.pointerX, event.scene.pointerY, function(mesh) {
+          return mesh !== event.scene.meshes[0];
+        });
+
+        if (pickInfo.hit) {
+          currentMesh = pickInfo.pickedMesh;
+          startingPoint = getGroundPosition();
+
+          if (startingPoint) {
+            // we need to disconnect camera from canvas
+            setTimeout(function() {
+              event.scene.activeCamera.detachControl(canvas);
+            }, 0);
+          }
+        }
+      };
+
+      var onPointerUp = function() {
+        if (startingPoint) {
+          event.scene.activeCamera.attachControl(canvas, true);
+          startingPoint = null;
+          return;
+        }
+      };
+
+      var onPointerMove = function(evt) {
+        if (!startingPoint) {
+          return;
+        }
+
+        var current = getGroundPosition();
+
+        if (!current) {
+          return;
+        }
+
+        var diff = current.subtract(startingPoint);
+        currentMesh.position.addInPlace(diff);
+
+        startingPoint = current;
+      };
+
+      canvas.addEventListener("pointerdown", onPointerDown, false);
+      canvas.addEventListener("pointerup", onPointerUp, false);
+      canvas.addEventListener("pointermove", onPointerMove, false);
     }
   },
   created() {},
@@ -201,8 +303,8 @@ export default {
 <style scoped>
 .table {
   background-color: darkslategray;
-  width: 4000px;
-  height: 2500px;
+  /* width: 4000px;
+  height: 2500px; */
 }
 .draggable {
   position: absolute;
@@ -228,11 +330,11 @@ export default {
 }
 
 .hand.expanded {
-    bottom: 0vh;
+  bottom: 0vh;
 }
 
 .hand.collapsed {
-    bottom: -250px;
+  bottom: -250px;
 }
 
 .hand .expand {
@@ -250,5 +352,4 @@ export default {
   background: rgba(0, 0, 0, 0.1);
   z-index: 100000000;
 }
-
 </style>
