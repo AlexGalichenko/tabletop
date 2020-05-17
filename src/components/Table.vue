@@ -69,14 +69,18 @@
 
     <Scene @complete="readyScene">
       <Camera type="arcRotate"></Camera>
-      <PointLight :position="[0, 2, -1]"></PointLight>
+      <HemisphericLight diffuse="#FFF"></HemisphericLight>
       <Ground :options="{width:100, height:100}">
-        <Material diffuse="#F00"></Material>
+        <Material diffuse="#FFF"></Material>
       </Ground>
-      <Box :position="[1, 0, 0]" :scaling="[3,0.1,2]">
-        <Property name="someSceneProperty" :any="{ aProperty: 'a value' }"></Property>
+      <Box v-for="(object, index) in ownerless" :position="[object.x, 0, object.y]" :scaling="[object.height / 100, 0.01, object.width / 100]" @click="boxclick" :key="index">
         <Material>
-          <Texture src="https://i.imgur.com/mSK2V5v.jpg"></Texture>
+          <Texture :src="object.url">
+            <Property name="uOffset" :any="object.column / object.columns"/>
+            <Property name="vOffset" :any="object.row / object.rows"/>
+            <Property name="uScale" :any="1 / object.columns"/>
+            <Property name="vScale" :any="1 / object.rows"/>
+          </Texture>
         </Material>
       </Box>
     </Scene>
@@ -141,6 +145,9 @@ export default {
     }
   },
   methods: {
+    boxclick() {
+      console.log("works")
+    },
     register() {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
     },
