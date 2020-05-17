@@ -71,9 +71,10 @@
       <Camera type="arcRotate"></Camera>
       <HemisphericLight diffuse="#FFF"></HemisphericLight>
       <Ground :options="{width:100, height:100}">
-        <Material diffuse="#FFF"></Material>
+        <Material diffuse="#F0F"></Material>
       </Ground>
       <Box v-for="(object, index) in ownerless" :position="[object.x, 0, object.y]" :scaling="[object.height / 100, 0.01, object.width / 100]" @click="boxclick" :key="index">
+        <Property name="dataObject" :any="object"/>
         <Material>
           <Texture :src="object.url">
             <Property name="uOffset" :any="object.column / object.columns"/>
@@ -84,6 +85,16 @@
         </Material>
       </Box>
     </Scene>
+
+    <div :style="dropdownStyle">
+      <md-menu :md-active="showDropdown" @md-closed="showDropdown = false">
+        <md-menu-content>
+          <md-menu-item>My Item 1</md-menu-item>
+          <md-menu-item>My Item 2</md-menu-item>
+          <md-menu-item>My Item 3</md-menu-item>
+        </md-menu-content>
+      </md-menu>
+    </div>
   </div>
 </template>
 
@@ -117,10 +128,16 @@ export default {
       selectedObject: null,
       toggleHand: true,
       scene: null,
-      engine: null
+      engine: null,
+      showDropdown: false,
+      dropdownTop: 0,
+      dropdownRight: 0
     };
   },
   computed: {
+    dropdownStyle() {
+      return `position: absolute; top: ${this.dropdownTop}px; right: ${this.dropdownRight}px`;
+    },
     ownerfull() {
       return this.$store.state.user
         ? this.game.objects.filter(o => o.owner === this.$store.state.user.uid)
@@ -171,12 +188,14 @@ export default {
       document.body.removeChild(element);
     },
     readyScene(event) {
+      const self = this;
       this.engine = event.engine;
       this.scene = event.scene;
 
       var canvas = event.engine.getRenderingCanvas();
       var startingPoint;
       var currentMesh;
+      let clickPosition;
       console.log(event.scene)
 
       var getGroundPosition = function() {
@@ -193,25 +212,36 @@ export default {
       };
 
       var onPointerDown = function(evt) {
-        if (evt.button !== 0) {
-          return;
-        }
-
-        // check if we are under a mesh
         var pickInfo = event.scene.pick(event.scene.pointerX, event.scene.pointerY, function(mesh) {
           return mesh !== event.scene.meshes[0];
         });
+        if (evt.button === 0) {
+          console.log("left click")
+          // check if we are under a mesh
 
-        if (pickInfo.hit) {
-          currentMesh = pickInfo.pickedMesh;
-          startingPoint = getGroundPosition();
+          if (pickInfo.hit) {
+            currentMesh = pickInfo.pickedMesh;
+            startingPoint = getGroundPosition();
 
-          if (startingPoint) {
-            // we need to disconnect camera from canvas
-            setTimeout(function() {
-              event.scene.activeCamera.detachControl(canvas);
-            }, 0);
+            if (startingPoint) {
+              // we need to disconnect camera from canvas
+              setTimeout(function() {
+                event.scene.activeCamera.detachControl(canvas);
+              }, 0);
+            }
           }
+          return;
+        } else if (evt.button === 2) {
+          if (pickInfo.hit) {
+            currentMesh = pickInfo.pickedMesh;
+            clickPosition = pickInfo;
+            self.showDropdown = true;
+            self.dropdownTop = evt.clientX;
+            self.dropdownRight = evt.clientY;
+            console.log(evt)
+            console.log(currentMesh)
+          }
+          return;
         }
       };
 
