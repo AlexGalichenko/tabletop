@@ -258,16 +258,10 @@ export default {
   },
 
   moveObject(state, data) {
-    const event = data.event;
-    const scale = data.scale;
-    const target = event.target;
-    const dataId = target.getAttribute("data-id");
-    const obj = state.game.objects.find(object => object.id === dataId);
-    const x = (parseFloat(obj.x) || 0) + event.dx / scale;
-    const y = (parseFloat(obj.y) || 0) + event.dy / scale;
-    obj.x = x;
-    obj.y = y;
-    obj.z = getZ();
+    const obj = state.game.objects.find(object => object.id === data.objectId);
+    obj.x += data.x;
+    obj.y += data.y;
+    // obj.z = getZ();
     obj.new = true;
   },
 

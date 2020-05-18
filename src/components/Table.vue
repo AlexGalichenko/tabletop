@@ -67,20 +67,31 @@
       >{{toggleHand ? 'Collapse' : 'Expand'}}</md-button>
     </div>
 
-    <Scene @complete="readyScene">
-      <Camera type="arcRotate"></Camera>
+    <Scene @complete="readyScene" @collide$="collideHandler">
+      <Property name="collisionsEnabled" :any="true"/>
+      <Camera type="arcRotate">
+        <Property name="checkCollisions" :any="true"/>
+      </Camera>
       <HemisphericLight diffuse="#FFF"></HemisphericLight>
       <Ground :options="{width:100, height:100}">
         <Material diffuse="#F0F"></Material>
+        <Property name="checkCollisions" :any="true"/>
       </Ground>
-      <Box v-for="(object, index) in ownerless" :position="[object.x, 0, object.y]" :scaling="[object.height / 100, 0.01, object.width / 100]" @click="boxclick" :key="index">
+      <Box
+        v-for="(object, index) in ownerless"
+        :position="[object.x, 0, object.y]"
+        :scaling="[object.height / 100, 0.5, object.width / 100]"
+        :key="index"
+        @collision="collideHandler"
+      >
+        <Property name="checkCollisions" :any="true"/>
         <Property name="dataObject" :any="object"/>
         <Material>
           <Texture :src="object.url">
-            <Property name="uOffset" :any="object.column / object.columns"/>
-            <Property name="vOffset" :any="object.row / object.rows"/>
-            <Property name="uScale" :any="1 / object.columns"/>
-            <Property name="vScale" :any="1 / object.rows"/>
+            <Property name="uOffset" :any="object.column / object.columns" />
+            <Property name="vOffset" :any="object.row / object.rows" />
+            <Property name="uScale" :any="1 / object.columns" />
+            <Property name="vScale" :any="1 / object.rows" />
           </Texture>
         </Material>
       </Box>
@@ -109,6 +120,7 @@ import RegisterDialog from "./overlay/RegisterDialog.vue";
 import ImportDialog from "./overlay/ImportDialog.vue";
 
 import { getSelectedIndexes } from "../utils/utils.js";
+import * as BABYLON from "babylonjs";
 
 export default {
   name: "Table",
@@ -162,8 +174,9 @@ export default {
     }
   },
   methods: {
-    boxclick() {
-      console.log("works")
+    collideHandler(evt) {
+      console.log(evt);
+      console.log("collide")
     },
     register() {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
@@ -196,13 +209,20 @@ export default {
       var startingPoint;
       var currentMesh;
       let clickPosition;
-      console.log(event.scene)
 
-      var getGroundPosition = function() {
+      canvas.addEventListener("pointerdown", onPointerDown, false);
+      canvas.addEventListener("pointerup", onPointerUp, false);
+      canvas.addEventListener("pointermove", onPointerMove, false);
+
+      function getGroundPosition() {
         // Use a predicate to get position on the ground
-        var pickinfo = event.scene.pick(event.scene.pointerX, event.scene.pointerY, function(mesh) {
-          return mesh == event.scene.meshes[0];
-        });
+        var pickinfo = event.scene.pick(
+          event.scene.pointerX,
+          event.scene.pointerY,
+          function(mesh) {
+            return mesh == event.scene.meshes[0];
+          }
+        );
 
         if (pickinfo.hit) {
           return pickinfo.pickedPoint;
@@ -211,12 +231,16 @@ export default {
         return null;
       };
 
-      var onPointerDown = function(evt) {
-        var pickInfo = event.scene.pick(event.scene.pointerX, event.scene.pointerY, function(mesh) {
-          return mesh !== event.scene.meshes[0];
-        });
+      function onPointerDown(evt) {
+        var pickInfo = event.scene.pick(
+          event.scene.pointerX,
+          event.scene.pointerY,
+          function(mesh) {
+            return mesh !== event.scene.meshes[0];
+          }
+        );
         if (evt.button === 0) {
-          console.log("left click")
+          // console.log(event.scene.meshes);
           // check if we are under a mesh
 
           if (pickInfo.hit) {
@@ -238,18 +262,30 @@ export default {
             self.showDropdown = true;
             self.dropdownTop = evt.clientY;
             self.dropdownLeft = evt.clientX;
-            // const dropdown = document.querySelector(".md-menu-content");
-            // dropdown.style.position = "absolute";
-            // dropdown.style.left = evt.clientX;
-            // dropdown.style.left = evt.clientX;
-            console.log(evt)
-            console.log(currentMesh)
           }
           return;
         }
       };
 
-      var onPointerUp = function() {
+      function onPointerUp(evt) {
+        var pickInfo = event.scene.pick(
+          event.scene.pointerX,
+          event.scene.pointerY,
+          function(mesh) {
+            return mesh !== event.scene.meshes[0];
+          }
+        );
+        //Check intersection with containers
+        if (pickInfo.hit) {
+          const draggableMesh = pickInfo.pickedMesh;
+          const containers = event.scene.meshes.filter((mesh, index) => index > 0 && mesh.dataObject.type === "container");
+          for (let container of containers) {
+            if (container !== draggableMesh && BABYLON.Vector3.Distance(container.position, draggableMesh.position) < 1) {
+              putToContainer(container, draggableMesh);
+              // console.log(draggableMesh.id, " intersects", container.id)
+            }
+          }
+        }
         if (startingPoint) {
           event.scene.activeCamera.attachControl(canvas, true);
           startingPoint = null;
@@ -257,7 +293,7 @@ export default {
         }
       };
 
-      var onPointerMove = function(evt) {
+      function onPointerMove(evt) {
         if (!startingPoint) {
           return;
         }
@@ -268,75 +304,34 @@ export default {
           return;
         }
 
-        var diff = current.subtract(startingPoint);
+        const diff = current.subtract(startingPoint);
         currentMesh.position.addInPlace(diff);
-
+        self.$store.dispatch("commitMutation", {
+          mutation: "moveObject",
+          params: {
+            objectId: currentMesh.dataObject.id,
+            x: diff.x,
+            y: diff.z
+          }
+        });
         startingPoint = current;
       };
 
-      canvas.addEventListener("pointerdown", onPointerDown, false);
-      canvas.addEventListener("pointerup", onPointerUp, false);
-      canvas.addEventListener("pointermove", onPointerMove, false);
+      function putToContainer(container, target) {
+        self.$store.dispatch("commitMutation", {
+          mutation: "putObjectToContainer",
+          params: {
+            objectId: target.dataObject.id,
+            containerId: container.dataObject.id
+          }
+        });
+      }
     }
   },
   created() {},
   mounted() {
-    const self = this;
-
     this.$store.commit("setRoomId", this.$route.params.id);
     this.$store.dispatch("getData");
-
-    interact(".draggable").draggable({
-      ignoreFrom: ".pinned",
-      inertia: {
-        resistance: 60
-      },
-      restrict: {
-        restriction: "parent",
-        endOnly: false,
-        elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
-      },
-      // autoScroll: true,
-      listeners: {
-        move: function(event) {
-          self.$store.dispatch("commitMutation", {
-            mutation: "moveObject",
-            params: {
-              event,
-              scale: 1
-            }
-          });
-        }
-      }
-    });
-
-    interact(".container:not(.infinite)").dropzone({
-      accept: ":not(.hand) > *",
-      overlap: 0.1, //% of element
-      ondragenter: function(event) {
-        event.target.classList.add("drop-target");
-        event.relatedTarget.classList.add("drop-relatedTarget");
-      },
-      ondragleave: function(event) {
-        event.relatedTarget.classList.remove("drop-relatedTarget");
-        event.target.classList.remove("drop-target");
-      },
-      ondrop: function(event) {
-        event.relatedTarget.classList.remove("drop-relatedTarget");
-        event.target.classList.remove("drop-target");
-
-        const objectId = event.relatedTarget.getAttribute("data-id");
-        const containerId = event.target.getAttribute("data-id");
-
-        self.$store.dispatch("commitMutation", {
-          mutation: "putObjectToContainer",
-          params: {
-            objectId,
-            containerId
-          }
-        });
-      }
-    });
   }
 };
 </script>
