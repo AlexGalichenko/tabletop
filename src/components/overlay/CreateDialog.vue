@@ -44,6 +44,11 @@
         <md-input v-model="width"/>
       </md-field>
 
+      <md-field v-if="['Deck', 'Tile', 'Container'].includes(type)">
+        <label>Depth</label>
+        <md-input v-model="depth"/>
+      </md-field>
+
       <md-field v-if="['Dice'].includes(type)">
         <label>Edges</label>
         <md-input v-model="edges"/>
@@ -85,7 +90,8 @@ export default {
       width: 200,
       scale: 1,
       infinite: false,
-      edges: 6
+      edges: 6,
+      depth: 1
     };
   },
   computed: {},
@@ -120,6 +126,7 @@ export default {
                 backUrl: this.backUrl,
                 height: this.height,
                 width: this.width,
+                depth: this.depth,
                 scale: this.scale,
               }
             });
@@ -135,6 +142,7 @@ export default {
               backUrl: this.backUrl,
               height: this.height,
               width: this.width,
+              depth: this.depth,
               scale: this.scale,
               infinite: this.infinite
             }

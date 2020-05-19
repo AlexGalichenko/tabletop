@@ -24,9 +24,9 @@ export default {
     const createdDeck = {
       ...params,
       url: params.backUrl,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
-      z: getZ(),
+      x: 1,
+      y: 1,
+      z: 0,
       rotation: 0,
       isFlipped: false
     };
@@ -55,9 +55,9 @@ export default {
     const objects = state.game.objects;
     const createdContainer = {
       ...params,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
-      z: getZ(),
+      x: 1,
+      y: 1,
+      z: 0,
       rotation: 0,
       isFlipped: false
     };
@@ -72,9 +72,9 @@ export default {
     const objects = state.game.objects;
     const createdTile = {
       ...params,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
-      z: getZ(),
+      x: 1,
+      y: 1,
+      z: 0,
       rotation: 0,
       isFlipped: false
     };
@@ -89,9 +89,9 @@ export default {
     const objects = state.game.objects;
     const createdCounter = {
       ...params,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
-      z: getZ(),
+      x: 1,
+      y: 1,
+      z: 0,
       rotation: 0,
       isFlipped: false
     };
@@ -106,9 +106,9 @@ export default {
     const objects = state.game.objects;
     const createdDice = {
       ...params,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
-      z: getZ(),
+      x: 1,
+      y: 1,
+      z: 0,
       rotation: 0,
       isFlipped: false
     };
@@ -126,9 +126,9 @@ export default {
       if (container.infinite) {
         object.id = uniqid();
       }
-      object.x = container.x + 25;
-      object.y = container.y + 25;
-      object.z = getZ();
+      object.x = container.x + 2.5;
+      object.y = container.y + 2.5;
+      object.z = 0;
       object.owner = "";
       object.new = true;
       state.game.objects.push(object);
@@ -160,7 +160,6 @@ export default {
       state.game.objects.push(object);
       container.new = true;
     }
-    state.selectedIndexes = [];
   },
 
   putObjectToContainer(state, params) {
@@ -176,7 +175,6 @@ export default {
     container.objects.push(object);
     gameObjects.splice(objectIndex, 1);
     container.new = true;
-    state.selectedIndexes = [];
   },
 
   deleteObject(state, objectId) {
@@ -222,9 +220,9 @@ export default {
     const object = state.game.objects.find(obj => obj.id === objectId)
     if (object.owner === state.user.uid) {
       object.owner = "";
-      object.x = window.scrollX + 100;
-      object.y = window.scrollY + 100;
-      object.z = 100000020;
+      object.x = 0;
+      object.y = 1;
+      object.z = 0;
       object.new = true;
     }
   },
@@ -250,8 +248,7 @@ export default {
     const object = state.game.objects.find(obj => obj.id === params.objectId)
     delete params.objectId;
     Object.entries(params).forEach(entry => {
-      console.log(entry)
-      if (object[entry[0]] !== undefined && entry[1]) {
+      if (entry[1]) {
         object[entry[0]] = entry[1];
       }
     })
@@ -261,7 +258,21 @@ export default {
     const obj = state.game.objects.find(object => object.id === data.objectId);
     obj.x += data.x;
     obj.y += data.y;
-    // obj.z = getZ();
+    obj.z = data.z;
+    obj.new = true;
+  },
+
+  moveObjectHand(state, data) {
+    const event = data.event;
+    const scale = data.scale;
+    const target = event.target;
+    const dataId = target.getAttribute("data-id");
+    const obj = state.game.objects.find(object => object.id === dataId);
+    const x = (parseFloat(obj.x) || 0) + event.dx / scale;
+    const y = (parseFloat(obj.y) || 0) + event.dy / scale;
+    obj.x = x;
+    obj.y = y;
+    obj.z = getZ();
     obj.new = true;
   },
 

@@ -54,7 +54,6 @@ export default {
             id: "firstLoad",
             val: snapshot.val().game
           });
-          // store.commit('lobbyAdminUpdate', snapshot.val().creator);
         });
       }
 
@@ -85,11 +84,6 @@ export default {
       
       //players changed
       fb.child('/game/players').on("value", function(snapshot){
-        // console.log(snapshot)
-        // store.commit('updateGame', {
-        //   id: "players",
-        //   val: snapshot.val()
-        // });
         load();
       });
 
@@ -154,7 +148,6 @@ export default {
 
   leftRoom(store, uid) {
     const roomId = store.state.roomId;
-    console.log(Object.entries(store.state.game.players))
     const userKv = Object.entries(store.state.game.players).find(kv => kv[1].uid === uid);
     if (userKv) {
       firebase.database().ref(`/room/${roomId}/game/players/${userKv[0]}`).remove();

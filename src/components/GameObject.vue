@@ -164,7 +164,7 @@ export default {
           : `${this.object.columns * 100}% ${this.object.rows * 100}%`,
         "background-position": isFlipped
           ? "100% 100%"
-          : `${this.object.column * 100}% ${this.object.row * 100}%`,
+          : `${(this.object.column - 1) / (this.object.columns - 1) * 100}% ${(this.object.row - 1) / (this.object.rows - 1) * 100}%`,
         "min-height": `${this.object.height}px`,
         "min-width": `${this.object.width}px`,
         "z-index": this.object.z || 0,

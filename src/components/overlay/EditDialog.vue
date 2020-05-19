@@ -24,6 +24,11 @@
       </md-field>
 
       <md-field>
+        <label>Depth</label>
+        <md-input v-model="depth"/>
+      </md-field>
+
+      <md-field>
         <label>Scale</label>
         <md-input v-model="scale"/>
       </md-field>
@@ -72,6 +77,10 @@ export default {
       get() {return getProperty(this.object, "width")},
       set(value) {this.pwidth = value;}
     },
+    depth: {
+      get() {return getProperty(this.object, "depth")},
+      set(value) {this.pdepth = value;}
+    },
     scale: {
       get() {return getProperty(this.object, "scale")},
       set(value) {this.pscale = value;}
@@ -87,6 +96,7 @@ export default {
             backUrl: this.pbackUrl,
             height: this.pheight,
             width: this.pwidth,
+            depth: this.pdepth,
             scale: this.pscale
           }
         });

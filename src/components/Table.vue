@@ -7,7 +7,7 @@
   >
     <EditDialog
       :showDialog="showEditDialog"
-      :object="selectedObject"
+      :object="interactedObject || selectedObject"
       @closeEditDialog="showEditDialog = false"
     />
 
@@ -17,15 +17,6 @@
       @closeRegisterDialog="showRegisterDialog = false"
     />
     <ImportDialog :showDialog="showImportDialog" @closeImportDialog="showImportDialog = false" />
-
-    <!-- <GameObject
-      v-for="(object, index) in ownerless"
-      :key="index"
-      :id="object.id"
-      :data-id="object.id"
-      :object="object"
-      @showEditDialog="showEditDialogHandler"
-    />-->
 
     <!-- Players Box -->
     <div class="players">
@@ -52,7 +43,7 @@
       </md-speed-dial-content>
     </md-speed-dial>
 
-    <div class="hand collapsed">
+    <div :class="handClass">
       <GameObject
         v-for="(object, index) in ownerfull"
         :key="index"
@@ -67,42 +58,68 @@
       >{{toggleHand ? 'Collapse' : 'Expand'}}</md-button>
     </div>
 
-    <Scene @complete="readyScene" @collide$="collideHandler">
-      <Property name="collisionsEnabled" :any="true"/>
+    <Scene @complete="readyScene">
+      <Property name="collisionsEnabled" :any="true" />
       <Camera type="arcRotate">
-        <Property name="checkCollisions" :any="true"/>
+        <Property name="checkCollisions" :any="true" />
       </Camera>
-      <HemisphericLight diffuse="#FFF"></HemisphericLight>
+      <HemisphericLight>
+        <property name="intensity" :float="1.5"></property>
+      </HemisphericLight>
       <Ground :options="{width:100, height:100}">
-        <Material diffuse="#F0F"></Material>
-        <Property name="checkCollisions" :any="true"/>
-      </Ground>
-      <Box
-        v-for="(object, index) in ownerless"
-        :position="[object.x, 0, object.y]"
-        :scaling="[object.height / 100, 0.5, object.width / 100]"
-        :key="index"
-        @collision="collideHandler"
-      >
-        <Property name="checkCollisions" :any="true"/>
-        <Property name="dataObject" :any="object"/>
+        <Property name="name" :any="'table'" />
         <Material>
-          <Texture :src="object.url">
-            <Property name="uOffset" :any="object.column / object.columns" />
-            <Property name="vOffset" :any="object.row / object.rows" />
-            <Property name="uScale" :any="1 / object.columns" />
-            <Property name="vScale" :any="1 / object.rows" />
-          </Texture>
+          <Texture
+            :src="'https://media.istockphoto.com/photos/green-worn-poker-or-pool-table-felt-texture-picture-id481055059?k=6&m=481055059&s=612x612&w=0&h=1jEKknomRjh0Kxh50sF-2-M_QgSltF8jcYmp-6RuUoI='"
+          />
         </Material>
-      </Box>
+        <Property name="checkCollisions" :any="true" />
+      </Ground>
+
+      <!-- 3D scene -->
+      <!-- Cards -->
+      <Card 
+      v-for="(object, index) in ownerless.filter(card => card.type === 'card')" 
+      :key="'card' + index" 
+      :object="object"/>
+
+      <!-- Containers -->
+      <Container 
+        v-for="(object, index) in ownerless.filter(card => card.type === 'container')" 
+        :key="'container' + index" 
+        :object="object"/>
+
+      <!-- Tiles Box -->
+      <TileBox 
+        v-for="(object, index) in ownerless.filter(tile => tile.type === 'tile' && (!tile.shape || tile.shape =='box'))"
+        :key="'tile-box' + index"
+        :object="object"/>
+
+      <!-- Tiles Hex -->
+      <TileHex 
+        v-for="(object, index) in ownerless.filter(tile => tile.type === 'tile' && tile.shape =='hex')"
+        :key="'tile-hex' + index"
+        :object="object"/>
+
+      <!-- Tiles Coin -->
+      <TileCoin
+        v-for="(object, index) in ownerless.filter(tile => tile.type === 'tile' && tile.shape =='coin')"
+        :key="'tile-coin' + index"
+        :object="object"/>
+        
     </Scene>
 
     <div :style="dropdownStyle">
       <md-menu :md-active="showDropdown" @md-closed="showDropdown = false">
         <md-menu-content>
-          <md-menu-item>My Item 1</md-menu-item>
-          <md-menu-item>My Item 2</md-menu-item>
-          <md-menu-item>My Item 3</md-menu-item>
+          <md-menu-item @click="flip">Flip</md-menu-item>
+          <md-menu-item @click="takeObjectFromContainer">Take From Container</md-menu-item>
+          <md-menu-item @click="takeObjectFromContainerToHand">Take From Container To Hand</md-menu-item>
+          <md-menu-item @click="draw">Draw</md-menu-item>
+          <md-menu-item @click="showEditDialog = true">Edit</md-menu-item>
+          <md-menu-item
+            @click="pin"
+          >{{(interactedObject && interactedObject.isPinned) ? "Unpin" : "Pin"}}</md-menu-item>
         </md-menu-content>
       </md-menu>
     </div>
@@ -119,6 +136,10 @@ import CreateDialog from "./overlay/CreateDialog.vue";
 import RegisterDialog from "./overlay/RegisterDialog.vue";
 import ImportDialog from "./overlay/ImportDialog.vue";
 
+import Card from "./objects/Card.vue";
+import Container from "./objects/Container.vue";
+import TileBox from "./objects/TileBox.vue";
+
 import { getSelectedIndexes } from "../utils/utils.js";
 import * as BABYLON from "babylonjs";
 
@@ -129,7 +150,11 @@ export default {
     EditDialog,
     CreateDialog,
     RegisterDialog,
-    ImportDialog
+    ImportDialog,
+
+    Card,
+    Container,
+    TileBox
   },
   data() {
     return {
@@ -143,7 +168,8 @@ export default {
       engine: null,
       showDropdown: false,
       dropdownTop: 0,
-      dropdownLeft: 0
+      dropdownLeft: 0,
+      interactedObject: null
     };
   },
   computed: {
@@ -151,17 +177,19 @@ export default {
       return `position: absolute; top: ${this.dropdownTop}px; left: ${this.dropdownLeft}px`;
     },
     ownerfull() {
-      return this.$store.state.user
+      return this.game && this.$store.state.user
         ? this.game.objects.filter(o => o.owner === this.$store.state.user.uid)
         : [];
     },
     ownerless() {
-      return this.game.objects.filter(
-        o => o.owner === undefined || o.owner === ""
-      );
+      return this.game
+        ? this.game.objects.filter(o => o.owner === undefined || o.owner === "")
+        : [];
     },
     players() {
-      return this.game.players ? Object.values(this.game.players) : [];
+      return this.game && this.game.players
+        ? Object.values(this.game.players)
+        : [];
     },
     selectedIndexes() {
       return this.$store.state.selectedIndexes;
@@ -174,9 +202,41 @@ export default {
     }
   },
   methods: {
-    collideHandler(evt) {
-      console.log(evt);
-      console.log("collide")
+    draw() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "drawObject",
+        params: this.interactedObject.id
+      });
+    },
+    play() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "playObject",
+        params: this.interactedObject.id
+      });
+    },
+    takeObjectFromContainer() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "takeObjectFromContainer",
+        params: this.interactedObject.id
+      });
+    },
+    takeObjectFromContainerToHand() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "takeObjectFromContainerToHand",
+        params: this.interactedObject.id
+      });
+    },
+    pin() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "pinObject",
+        params: this.interactedObject.id
+      });
+    },
+    flip() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "flipObject",
+        params: this.interactedObject.id
+      });
     },
     register() {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
@@ -229,7 +289,7 @@ export default {
         }
 
         return null;
-      };
+      }
 
       function onPointerDown(evt) {
         var pickInfo = event.scene.pick(
@@ -246,7 +306,6 @@ export default {
           if (pickInfo.hit) {
             currentMesh = pickInfo.pickedMesh;
             startingPoint = getGroundPosition();
-
             if (startingPoint) {
               // we need to disconnect camera from canvas
               setTimeout(function() {
@@ -258,6 +317,7 @@ export default {
         } else if (evt.button === 2) {
           if (pickInfo.hit) {
             currentMesh = pickInfo.pickedMesh;
+            self.interactedObject = pickInfo.pickedMesh.dataObject;
             clickPosition = pickInfo;
             self.showDropdown = true;
             self.dropdownTop = evt.clientY;
@@ -265,7 +325,7 @@ export default {
           }
           return;
         }
-      };
+      }
 
       function onPointerUp(evt) {
         var pickInfo = event.scene.pick(
@@ -275,23 +335,61 @@ export default {
             return mesh !== event.scene.meshes[0];
           }
         );
-        //Check intersection with containers
-        if (pickInfo.hit) {
-          const draggableMesh = pickInfo.pickedMesh;
-          const containers = event.scene.meshes.filter((mesh, index) => index > 0 && mesh.dataObject.type === "container");
-          for (let container of containers) {
-            if (container !== draggableMesh && BABYLON.Vector3.Distance(container.position, draggableMesh.position) < 1) {
-              putToContainer(container, draggableMesh);
-              // console.log(draggableMesh.id, " intersects", container.id)
+        if (currentMesh && evt.button === 0) {
+          if (pickInfo.pickedPoint) {
+            const ray = new BABYLON.Ray(
+              pickInfo.pickedPoint,
+              new BABYLON.Vector3(0, -1, 0)
+            );
+            const underlyingMeshPickInfo = event.scene.pickWithRay(
+              ray,
+              item => {
+                if (item.id !== currentMesh.id) {
+                  return item;
+                }
+              }
+            );
+            const pickedMesh = underlyingMeshPickInfo.pickedMesh;
+            if (
+              pickedMesh.name !== "table" &&
+              pickedMesh.dataObject.type === "container"
+            ) {
+              putToContainer(pickedMesh, currentMesh);
+            } else {
+              const z =
+                pickedMesh.name !== "table"
+                  ? pickedMesh.position.y + pickedMesh.scaling.y / 2
+                  : 0;
+              self.$store.dispatch("commitMutation", {
+                mutation: "moveObject",
+                params: {
+                  objectId: currentMesh.dataObject.id,
+                  x: 0,
+                  y: 0,
+                  z: z
+                }
+              });
             }
+          } else {
+            self.$store.dispatch("commitMutation", {
+              mutation: "moveObject",
+              params: {
+                objectId: currentMesh.dataObject.id,
+                x: 0,
+                y: 0,
+                z: 0
+              }
+            });
           }
         }
         if (startingPoint) {
+          currentMesh = null;
           event.scene.activeCamera.attachControl(canvas, true);
           startingPoint = null;
+          self.interactedObject = null;
           return;
         }
-      };
+      }
 
       function onPointerMove(evt) {
         if (!startingPoint) {
@@ -304,18 +402,22 @@ export default {
           return;
         }
 
-        const diff = current.subtract(startingPoint);
-        currentMesh.position.addInPlace(diff);
-        self.$store.dispatch("commitMutation", {
-          mutation: "moveObject",
-          params: {
-            objectId: currentMesh.dataObject.id,
-            x: diff.x,
-            y: diff.z
-          }
-        });
+        if (currentMesh && !currentMesh.dataObject.isPinned) {
+          const diff = current.subtract(startingPoint);
+          currentMesh.position.addInPlace(diff);
+          self.$store.dispatch("commitMutation", {
+            mutation: "moveObject",
+            params: {
+              objectId: currentMesh.dataObject.id,
+              x: diff.x,
+              y: diff.z,
+              z: 0.5
+            }
+          });
+        }
         startingPoint = current;
-      };
+        return;
+      }
 
       function putToContainer(container, target) {
         self.$store.dispatch("commitMutation", {
@@ -325,13 +427,46 @@ export default {
             containerId: container.dataObject.id
           }
         });
+        return;
       }
     }
   },
   created() {},
   mounted() {
+    document.addEventListener(
+      "contextmenu",
+      function(e) {
+        e.preventDefault();
+      },
+      false
+    );
     this.$store.commit("setRoomId", this.$route.params.id);
     this.$store.dispatch("getData");
+
+    const self = this;
+    interact(".draggable").draggable({
+      ignoreFrom: ".pinned",
+      inertia: {
+        resistance: 60
+      },
+      restrict: {
+        restriction: "parent",
+        endOnly: false,
+        elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
+      },
+      // autoScroll: true,
+      listeners: {
+        move: function(event) {
+          self.$store.dispatch("commitMutation", {
+            mutation: "moveObjectHand",
+            params: {
+              event,
+              scale: 1
+            }
+          });
+        }
+      }
+    });
   }
 };
 </script>
