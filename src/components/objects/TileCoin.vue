@@ -34,7 +34,7 @@ export default {
     position() {
       return [
         this.object.x,
-        this.object.z + (this.object.depth || this.DEFAULT_DEPTH) / 200,
+        this.object.z + (this.object.depth || this.DEFAULT_DEPTH) * this.object.scale / 100,
         this.object.y
       ]
     }

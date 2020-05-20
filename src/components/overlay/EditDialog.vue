@@ -29,6 +29,15 @@
       </md-field>
 
       <md-field>
+        <label for="shape">Shape</label>
+        <md-select v-model="shape" name="shape" id="shape">
+          <md-option value="Box">Box</md-option>
+          <md-option value="Hex">Hex</md-option>
+          <md-option value="Coin">Coin</md-option>
+        </md-select>
+      </md-field>
+
+      <md-field>
         <label>Scale</label>
         <md-input v-model="scale"/>
       </md-field>
@@ -57,7 +66,8 @@ export default {
       pbackUrl: "",
       pheight: 0,
       pwidth: 0,
-      pscale: 0
+      pscale: 0,
+      pshape: ""
     }
   },
   computed: {
@@ -85,6 +95,10 @@ export default {
       get() {return getProperty(this.object, "scale")},
       set(value) {this.pscale = value;}
     },
+    shape: {
+      get() {return getProperty(this.object, "shape")},
+      set(value) {this.pshape = value;}
+    },
   },
   methods: {
     saveEditDialog() {
@@ -97,7 +111,8 @@ export default {
             height: this.pheight,
             width: this.pwidth,
             depth: this.pdepth,
-            scale: this.pscale
+            scale: this.pscale,
+            shape: this.pshape
           }
         });
         this.$emit('closeEditDialog');

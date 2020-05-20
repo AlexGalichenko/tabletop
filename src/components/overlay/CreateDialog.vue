@@ -54,6 +54,15 @@
         <md-input v-model="edges"/>
       </md-field>
 
+      <md-field v-if="['Tile'].includes(type)">
+        <label for="shape">Shape</label>
+        <md-select v-model="shape" name="shape" id="shape">
+          <md-option value="Box">Box</md-option>
+          <md-option value="Hex">Hex</md-option>
+          <md-option value="Coin">Coin</md-option>
+        </md-select>
+      </md-field>
+
       <md-field>
         <label>Scale</label>
         <md-input v-model="scale"/>
@@ -91,7 +100,8 @@ export default {
       scale: 1,
       infinite: false,
       edges: 6,
-      depth: 1
+      depth: 1,
+      shape: "Box"
     };
   },
   computed: {},
@@ -105,6 +115,7 @@ export default {
               params: {
                 id: uniqid(),
                 type: "container",
+                shape: "deck",
                 url: this.url,
                 backUrl: this.backUrl,
                 rows: this.rows,
@@ -128,6 +139,7 @@ export default {
                 width: this.width,
                 depth: this.depth,
                 scale: this.scale,
+                shape: this.shape
               }
             });
           } break;

@@ -1,10 +1,5 @@
 <template>
-  <div id="room"
-    @keydown.83="scrollDown"
-    @keydown.87="scrollUp"
-    @keydown.65="scrollLeft"
-    @keydown.68="scrollRight"
-  >
+  <div id="room">
     <Table />
   </div>
 </template>

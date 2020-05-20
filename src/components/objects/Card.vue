@@ -5,7 +5,7 @@
   >
     <Property name="dataObject" :any="object" />
     <Material>
-      <Texture :src="object.isFlipped ? object.backUrl :object.url">
+      <Texture :src="object.isFlipped ? object.backUrl : object.url">
         <Property name="uOffset" :any="object.isFlipped ? 1 : (object.column - 1) / object.columns" />
         <Property name="vOffset" :any="object.isFlipped ? 1 : (object.rows - object.row) / object.rows" />
         <Property name="uScale" :any="object.isFlipped ? 1 : 1 / object.columns" />

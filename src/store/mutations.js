@@ -1,5 +1,6 @@
 import Vue from "vue";
 import uniqid from "uniqid";
+import cloneDeep from "clone-deep";
 import { getZ } from "../utils/utils.js";
 
 const ROTATION_STEP = 15;
@@ -40,12 +41,24 @@ export default {
           row: i,
           column: j,
           rotation: 0,
-          isFlipped: false
+          isFlipped: false,
+          shape: null
         })
       }
     }
     createdDeck.new = true;
     objects.push(createdDeck);
+  },
+
+  copyObject(state, containerId) {
+    const object = state.game.objects.find(c => c.id === containerId);
+    const clone = cloneDeep(object)
+    clone.x = object.x + 2.5;
+    clone.y = object.y + 2.5;
+    clone.z = 0;
+    clone.id = uniqid(),
+    state.game.objects.push(clone);
+    clone.new = true;
   },
 
   createContainer(state, params) {
@@ -155,6 +168,7 @@ export default {
       object.x = 0;
       object.y = 0;
       object.z = 0;
+      object.isFlipped = false;
       object.owner = state.user.uid;
       object.new = true;
       state.game.objects.push(object);
@@ -172,6 +186,7 @@ export default {
     if (!container.objects) {
       Vue.set(container, 'objects', []);
     }
+    object.isFlipped = container.isFlipped;
     container.objects.push(object);
     gameObjects.splice(objectIndex, 1);
     container.new = true;
@@ -180,7 +195,6 @@ export default {
   deleteObject(state, objectId) {
     const objects = state.game.objects;
     const objectIndex = objects.findIndex(obj => obj.id === objectId);
-    const object = state.game.objects.find(obj => obj.id === objectId)
     if (objects[objectIndex] !== undefined) {
       objects.splice(objectIndex, 1);
     }
@@ -231,6 +245,17 @@ export default {
     const object = state.game.objects.find(obj => obj.id === objectId)
     object.isFlipped = !object.isFlipped
     object.new = true;
+  },
+
+  flipDeck(state, objectId) {
+    const deck = state.game.objects.find(obj => obj.id === objectId)
+    deck.isFlipped = !deck.isFlipped
+    deck.objects.reverse();
+    deck.objects = deck.objects.map(card => {
+      card.isFlipped = !card.isFlipped;
+      return card
+    })
+    deck.new = true;
   },
 
   pinObject(state, objectId) {

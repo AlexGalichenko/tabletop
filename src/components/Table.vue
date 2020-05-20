@@ -1,10 +1,5 @@
 <template>
-  <div
-    class="table"
-    @keyup.prevent.70="flip"
-    @keyup.prevent.81="rotateLeft"
-    @keyup.prevent.69="rotateRight"
-  >
+  <div class="table">
     <EditDialog
       :showDialog="showEditDialog"
       :object="interactedObject || selectedObject"
@@ -60,58 +55,78 @@
 
     <Scene @complete="readyScene">
       <Property name="collisionsEnabled" :any="true" />
-      <Camera type="arcRotate">
+      <Camera type="arcRotate" :alpha="0" :beta="0" :radius="30">
         <Property name="checkCollisions" :any="true" />
+        <Property name="panningSensibility" :float="150" />
+        <Property name="wheelDeltaPercentage" :float="0.01" />
+        <Property name="lowerRadiusLimit" :float="2" />
+        <Property name="upperRadiusLimit" :float="40" />
       </Camera>
-      <HemisphericLight>
-        <property name="intensity" :float="1.5"></property>
+      <HemisphericLight :direction="[1,1,0]">
+        <property name="intensity" :float="1.3"></property>
       </HemisphericLight>
-      <Ground :options="{width:100, height:100}">
+      <Ground :options="{width:200, height:200}">
         <Property name="name" :any="'table'" />
         <Material>
           <Texture
             :src="'https://media.istockphoto.com/photos/green-worn-poker-or-pool-table-felt-texture-picture-id481055059?k=6&m=481055059&s=612x612&w=0&h=1jEKknomRjh0Kxh50sF-2-M_QgSltF8jcYmp-6RuUoI='"
-          />
+          >
+            <Property name="uScale" :any="10" />
+            <Property name="vScale" :any="10" />
+          </Texture>
         </Material>
         <Property name="checkCollisions" :any="true" />
       </Ground>
 
       <!-- 3D scene -->
       <!-- Cards -->
-      <Card 
-      v-for="(object, index) in ownerless.filter(card => card.type === 'card')" 
-      :key="'card' + index" 
-      :object="object"/>
+      <Card
+        v-for="(object, index) in ownerless.filter(card => card.type === 'card')"
+        :key="'card' + index"
+        :object="object"
+      />
 
       <!-- Containers -->
-      <Container 
-        v-for="(object, index) in ownerless.filter(card => card.type === 'container')" 
-        :key="'container' + index" 
-        :object="object"/>
+      <Container
+        v-for="(object, index) in ownerless.filter(object => object.type === 'container' && object.shape !== 'deck')"
+        :key="'container' + index"
+        :object="object"
+      />
+
+      <!-- Deck -->
+      <Deck
+        v-for="(object, index) in ownerless.filter(object => object.type === 'container' && object.shape === 'deck')"
+        :key="'deck' + index"
+        :object="object"
+      />
 
       <!-- Tiles Box -->
-      <TileBox 
+      <TileBox
         v-for="(object, index) in ownerless.filter(tile => tile.type === 'tile' && (!tile.shape || tile.shape =='box'))"
         :key="'tile-box' + index"
-        :object="object"/>
+        :object="object"
+      />
 
       <!-- Tiles Hex -->
-      <TileHex 
+      <TileHex
         v-for="(object, index) in ownerless.filter(tile => tile.type === 'tile' && tile.shape =='hex')"
         :key="'tile-hex' + index"
-        :object="object"/>
+        :object="object"
+      />
 
       <!-- Tiles Coin -->
       <TileCoin
         v-for="(object, index) in ownerless.filter(tile => tile.type === 'tile' && tile.shape =='coin')"
         :key="'tile-coin' + index"
-        :object="object"/>
+        :object="object"
+      />
 
       <!-- Tiles Coin -->
       <Counter
         v-for="(object, index) in ownerless.filter(counter => counter.type === 'counter')"
         :key="'counter' + index"
-        :object="object"/>
+        :object="object"
+      />
     </Scene>
 
     <div :style="dropdownStyle">
@@ -121,7 +136,10 @@
           <md-menu-item @click="takeObjectFromContainer">Take From Container</md-menu-item>
           <md-menu-item @click="takeObjectFromContainerToHand">Take From Container To Hand</md-menu-item>
           <md-menu-item @click="draw">Draw</md-menu-item>
+          <md-menu-item @click="shuffle">Shuffle</md-menu-item>
+          <md-menu-item @click="copy">Copy</md-menu-item>
           <md-menu-item @click="showEditDialog = true">Edit</md-menu-item>
+          <md-menu-item @click="deleteObject">Delete</md-menu-item>
           <md-menu-item
             @click="pin"
           >{{(interactedObject && interactedObject.isPinned) ? "Unpin" : "Pin"}}</md-menu-item>
@@ -143,6 +161,7 @@ import ImportDialog from "./overlay/ImportDialog.vue";
 
 import Card from "./objects/Card.vue";
 import Container from "./objects/Container.vue";
+import Deck from "./objects/Deck.vue";
 import TileBox from "./objects/TileBox.vue";
 import TileHex from "./objects/TileHex.vue";
 import TileCoin from "./objects/TileCoin.vue";
@@ -162,6 +181,7 @@ export default {
 
     Card,
     Container,
+    Deck,
     TileBox,
     TileHex,
     TileCoin,
@@ -181,6 +201,7 @@ export default {
       dropdownTop: 0,
       dropdownLeft: 0,
       interactedObject: null
+      // camera:
     };
   },
   computed: {
@@ -213,6 +234,24 @@ export default {
     }
   },
   methods: {
+    deleteObject() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "deleteObject",
+        params: this.interactedObject.id
+      });
+    },
+    shuffle() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "shuffleContainer",
+        params: this.interactedObject.id
+      });
+    },
+    copy() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "copyObject",
+        params: this.interactedObject.id
+      });
+    },
     draw() {
       this.$store.dispatch("commitMutation", {
         mutation: "drawObject",
@@ -244,10 +283,19 @@ export default {
       });
     },
     flip() {
-      this.$store.dispatch("commitMutation", {
-        mutation: "flipObject",
+      if (this.interactedObject.shape !== "deck") {
+        this.$store.dispatch("commitMutation", {
+          mutation: "flipObject",
+          params: this.interactedObject.id
+        });
+      } 
+      else {
+        this.$store.dispatch("commitMutation", {
+        mutation: "flipDeck",
         params: this.interactedObject.id
       });
+      }
+
     },
     register() {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
@@ -345,7 +393,12 @@ export default {
           }
         );
         //Counter
-        if (evt.button === 0 && pickInfo.pickedMesh && (pickInfo.pickedMesh.name === "increaseCount" || pickInfo.pickedMesh.name === "decreaseCount")) {
+        if (
+          evt.button === 0 &&
+          pickInfo.pickedMesh &&
+          (pickInfo.pickedMesh.name === "increaseCount" ||
+            pickInfo.pickedMesh.name === "decreaseCount")
+        ) {
           self.$store.dispatch("commitMutation", {
             mutation: pickInfo.pickedMesh.name,
             params: pickInfo.pickedMesh.dataObject.id
@@ -353,16 +406,26 @@ export default {
         }
         if (currentMesh && evt.button === 0) {
           if (pickInfo.pickedPoint) {
-            const ray = new BABYLON.Ray(pickInfo.pickedPoint,new BABYLON.Vector3(0, -1, 0));
-            const underlyingMeshPickInfo = event.scene.pickWithRay(ray, item => item.id !== currentMesh.id && item.name !== "entity" ? item : undefined);
-            console.log(underlyingMeshPickInfo.pickedMesh)
-            console.log(currentMesh)
+            const ray = new BABYLON.Ray(
+              pickInfo.pickedPoint,
+              new BABYLON.Vector3(0, -1, 0)
+            );
+            const underlyingMeshPickInfo = event.scene.pickWithRay(ray, item =>
+              item.id !== currentMesh.id && item.name !== "entity"
+                ? item
+                : null
+            );
             const pickedMesh = underlyingMeshPickInfo.pickedMesh;
-            if (pickedMesh.name !== "table" && pickedMesh.dataObject.type === "container") {
+            if (
+              pickedMesh.name !== "table" &&
+              pickedMesh.dataObject.type === "container"
+            ) {
               putToContainer(pickedMesh, currentMesh);
-            } 
-            else {
-              const z = pickedMesh.name !== "table" ? pickedMesh.position.y + pickedMesh.scaling.y / 2 : 0;
+            } else {
+              const z =
+                pickedMesh.name !== "table"
+                  ? pickedMesh.position.y + pickedMesh.scaling.y / 2
+                  : 0;
               self.$store.dispatch("commitMutation", {
                 mutation: "moveObject",
                 params: {

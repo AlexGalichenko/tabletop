@@ -5,12 +5,12 @@
   >
     <Property name="name" :any="'entity'" />
     <Property name="isPickable" :any="false" />
-    <Box :position="[0, 0, -1]" :scaling="[1, 1, 1]">
+    <Box :position="[0, 0.15, -1]" :scaling="[1, 0.3, 1]">
       <Property name="name" :any="'decreaseCount'" />
       <Property name="dataObject" :any="object" />
       <Material :diffuse="'#999'"/>
     </Box>
-    <Box :position="[0, 0, 0]" :scaling="[1, 1, 1]" :options="meshOptions">
+    <Box :position="[0, 0.15, 0]" :scaling="[1, 0.3, 1]" :options="meshOptions">
       <Property name="dataObject" :any="object" />
       <Property name="name" :any="'count'" />
       <Material>
@@ -18,7 +18,7 @@
       </Material>
     </Box>
     <Property name="dataObject" :any="object" />
-    <Box :position="[0, 0, 1]" :scaling="[1, 1, 1]">
+    <Box :position="[0, 0.15, 1]" :scaling="[1, 0.3, 1]">
       <Property name="name" :any="'increaseCount'" />
       <Property name="dataObject" :any="object" />
       <Material :diffuse="'#999'"/>
@@ -59,7 +59,7 @@ export default {
     position() {
       return [
         this.object.x,
-        this.object.z + (this.object.depth || this.DEFAULT_DEPTH) / 200,
+        this.object.z + (this.object.depth || this.DEFAULT_DEPTH) * this.object.scale / 200,
         this.object.y
       ]
     }

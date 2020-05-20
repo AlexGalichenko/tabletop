@@ -21,7 +21,6 @@ export default {
   computed: {},
   methods: {},
   mounted() {},
-  computed: {}
 };
 </script>
 
