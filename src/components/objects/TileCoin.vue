@@ -1,7 +1,7 @@
 <template>
   <Cylinder
-    :position="[object.x, object.z + (object.depth ? object.depth / 2 : 0.15), object.y]"
-    :scaling="[object.height / 100, object.depth || 0.3, object.width / 100]"
+    :position="position"
+    :scaling="scaling"
     :options="{tessellation: 20}"
   >
     <Property name="checkCollisions" :any="true" />
@@ -18,10 +18,29 @@ export default {
   props: {
     object: Object
   },
-  computed: {},
+  data() {
+    return {
+      DEFAULT_DEPTH: 30
+    }
+  },
+  computed:{
+    scaling() {
+      return [
+        (this.object.height / 100) * this.object.scale,
+        ((this.object.depth || this.DEFAULT_DEPTH) / 100) * this.object.scale,
+        (this.object.width / 100) * this.object.scale,
+      ]
+    },
+    position() {
+      return [
+        this.object.x,
+        this.object.z + (this.object.depth || this.DEFAULT_DEPTH) / 200,
+        this.object.y
+      ]
+    }
+  },
   methods: {},
   mounted() {},
-  computed: {}
 };
 </script>
 

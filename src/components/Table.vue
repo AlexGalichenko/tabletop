@@ -106,7 +106,12 @@
         v-for="(object, index) in ownerless.filter(tile => tile.type === 'tile' && tile.shape =='coin')"
         :key="'tile-coin' + index"
         :object="object"/>
-        
+
+      <!-- Tiles Coin -->
+      <Counter
+        v-for="(object, index) in ownerless.filter(counter => counter.type === 'counter')"
+        :key="'counter' + index"
+        :object="object"/>
     </Scene>
 
     <div :style="dropdownStyle">
@@ -139,6 +144,9 @@ import ImportDialog from "./overlay/ImportDialog.vue";
 import Card from "./objects/Card.vue";
 import Container from "./objects/Container.vue";
 import TileBox from "./objects/TileBox.vue";
+import TileHex from "./objects/TileHex.vue";
+import TileCoin from "./objects/TileCoin.vue";
+import Counter from "./objects/Counter.vue";
 
 import { getSelectedIndexes } from "../utils/utils.js";
 import * as BABYLON from "babylonjs";
@@ -154,7 +162,10 @@ export default {
 
     Card,
     Container,
-    TileBox
+    TileBox,
+    TileHex,
+    TileCoin,
+    Counter
   },
   data() {
     return {
@@ -300,9 +311,7 @@ export default {
           }
         );
         if (evt.button === 0) {
-          // console.log(event.scene.meshes);
           // check if we are under a mesh
-
           if (pickInfo.hit) {
             currentMesh = pickInfo.pickedMesh;
             startingPoint = getGroundPosition();
@@ -328,38 +337,32 @@ export default {
       }
 
       function onPointerUp(evt) {
-        var pickInfo = event.scene.pick(
+        const pickInfo = event.scene.pick(
           event.scene.pointerX,
           event.scene.pointerY,
           function(mesh) {
             return mesh !== event.scene.meshes[0];
           }
         );
+        //Counter
+        if (evt.button === 0 && pickInfo.pickedMesh && (pickInfo.pickedMesh.name === "increaseCount" || pickInfo.pickedMesh.name === "decreaseCount")) {
+          self.$store.dispatch("commitMutation", {
+            mutation: pickInfo.pickedMesh.name,
+            params: pickInfo.pickedMesh.dataObject.id
+          });
+        }
         if (currentMesh && evt.button === 0) {
           if (pickInfo.pickedPoint) {
-            const ray = new BABYLON.Ray(
-              pickInfo.pickedPoint,
-              new BABYLON.Vector3(0, -1, 0)
-            );
-            const underlyingMeshPickInfo = event.scene.pickWithRay(
-              ray,
-              item => {
-                if (item.id !== currentMesh.id) {
-                  return item;
-                }
-              }
-            );
+            const ray = new BABYLON.Ray(pickInfo.pickedPoint,new BABYLON.Vector3(0, -1, 0));
+            const underlyingMeshPickInfo = event.scene.pickWithRay(ray, item => item.id !== currentMesh.id && item.name !== "entity" ? item : undefined);
+            console.log(underlyingMeshPickInfo.pickedMesh)
+            console.log(currentMesh)
             const pickedMesh = underlyingMeshPickInfo.pickedMesh;
-            if (
-              pickedMesh.name !== "table" &&
-              pickedMesh.dataObject.type === "container"
-            ) {
+            if (pickedMesh.name !== "table" && pickedMesh.dataObject.type === "container") {
               putToContainer(pickedMesh, currentMesh);
-            } else {
-              const z =
-                pickedMesh.name !== "table"
-                  ? pickedMesh.position.y + pickedMesh.scaling.y / 2
-                  : 0;
+            } 
+            else {
+              const z = pickedMesh.name !== "table" ? pickedMesh.position.y + pickedMesh.scaling.y / 2 : 0;
               self.$store.dispatch("commitMutation", {
                 mutation: "moveObject",
                 params: {
@@ -411,7 +414,7 @@ export default {
               objectId: currentMesh.dataObject.id,
               x: diff.x,
               y: diff.z,
-              z: 0.5
+              z: 0.8
             }
           });
         }
@@ -443,6 +446,7 @@ export default {
     this.$store.commit("setRoomId", this.$route.params.id);
     this.$store.dispatch("getData");
 
+    //2d movement in hand
     const self = this;
     interact(".draggable").draggable({
       ignoreFrom: ".pinned",

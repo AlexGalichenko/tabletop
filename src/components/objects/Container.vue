@@ -5,6 +5,7 @@
   >
     <Property name="checkCollisions" :any="true" />
     <Property name="dataObject" :any="object" />
+    <Property name="name" :any="'container'" />
     <Material>
       <Texture :src="object.url"></Texture>
     </Material>
