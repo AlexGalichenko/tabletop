@@ -1,14 +1,11 @@
 <template>
-  <Entity
-    :position="position"
-    :scaling="scaling"
-  >
+  <Entity :position="position" :scaling="scaling" :rotation="rotation">
     <Property name="name" :any="'entity'" />
     <Property name="isPickable" :any="false" />
     <Box :position="[0, 0.15, -1]" :scaling="[1, 0.3, 1]">
       <Property name="name" :any="'decreaseCount'" />
       <Property name="dataObject" :any="object" />
-      <Material :diffuse="'#999'"/>
+      <Material :diffuse="'#999'" />
     </Box>
     <Box :position="[0, 0.15, 0]" :scaling="[1, 0.3, 1]" :options="meshOptions">
       <Property name="dataObject" :any="object" />
@@ -21,7 +18,7 @@
     <Box :position="[0, 0.15, 1]" :scaling="[1, 0.3, 1]">
       <Property name="name" :any="'increaseCount'" />
       <Property name="dataObject" :any="object" />
-      <Material :diffuse="'#999'"/>
+      <Material :diffuse="'#999'" />
     </Box>
   </Entity>
 </template>
@@ -37,6 +34,9 @@ export default {
     object: Object
   },
   computed: {
+    rotation() {
+      return [0, (this.object.rotation / 180) * Math.PI, 0];
+    },
     meshOptions() {
       return {
         faceUV: [
@@ -46,22 +46,23 @@ export default {
           ZERO_VECTOR,
           new BABYLON.Vector4(0, 0, 1, 1),
           ZERO_VECTOR
-        ],
-      }
+        ]
+      };
     },
     scaling() {
       return [
         Number.parseFloat(this.object.scale),
         Number.parseFloat(this.object.scale),
-        Number.parseFloat(this.object.scale),
-      ]
+        Number.parseFloat(this.object.scale)
+      ];
     },
     position() {
       return [
         this.object.x,
-        this.object.z + (this.object.depth || this.DEFAULT_DEPTH) * this.object.scale / 200,
+        this.object.z +
+          ((this.object.depth || this.DEFAULT_DEPTH) * this.object.scale) / 200,
         this.object.y
-      ]
+      ];
     }
   },
   data() {

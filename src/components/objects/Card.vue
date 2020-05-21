@@ -1,13 +1,16 @@
 <template>
-  <Box 
-    :position="position"
-    :scaling="scaling"
-  >
+  <Box :position="position" :scaling="scaling" :rotation="rotation">
     <Property name="dataObject" :any="object" />
     <Material>
       <Texture :src="object.isFlipped ? object.backUrl : object.url">
-        <Property name="uOffset" :any="object.isFlipped ? 1 : (object.column - 1) / object.columns" />
-        <Property name="vOffset" :any="object.isFlipped ? 1 : (object.rows - object.row) / object.rows" />
+        <Property
+          name="uOffset"
+          :any="object.isFlipped ? 1 : (object.column - 1) / object.columns"
+        />
+        <Property
+          name="vOffset"
+          :any="object.isFlipped ? 1 : (object.rows - object.row) / object.rows"
+        />
         <Property name="uScale" :any="object.isFlipped ? 1 : 1 / object.columns" />
         <Property name="vScale" :any="object.isFlipped ? 1 : 1 / object.rows" />
       </Texture>
@@ -24,22 +27,25 @@ export default {
   data() {
     return {
       DEFAULT_DEPTH: 1
-    }
+    };
   },
   computed: {
+    rotation() {
+      return [0, (this.object.rotation / 180) * Math.PI, 0];
+    },
     scaling() {
       return [
         (this.object.height / 100) * this.object.scale,
         ((this.object.depth || this.DEFAULT_DEPTH) / 100) * this.object.scale,
-        (this.object.width / 100) * this.object.scale,
-      ]
+        (this.object.width / 100) * this.object.scale
+      ];
     },
     position() {
       return [
         this.object.x,
         this.object.z + (this.object.depth || this.DEFAULT_DEPTH) / 200,
         this.object.y
-      ]
+      ];
     }
   },
   methods: {},

@@ -15,6 +15,9 @@ export default {
 </script>
 
 <style>
+  body {
+    overflow: hidden;
+  }
   .md-dialog-container {
     transform: unset;
     width: 50%;

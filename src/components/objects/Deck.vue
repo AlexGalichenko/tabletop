@@ -2,6 +2,7 @@
   <Box
     :position="[object.x, object.z + deckHeight / 2, object.y]"
     :scaling="[object.height / 100, deckHeight , object.width / 100]"
+    :rotation="rotation"
     :options="meshOptions"
   >
     <Property name="checkCollisions" :any="true" />
@@ -9,8 +10,14 @@
     <Property name="name" :any="'container'" />
     <Material>
       <Texture v-if="lastObject" :src="object.isFlipped ? lastObject.backUrl : lastObject.url">
-        <Property name="uOffset" :any="object.isFlipped ? 1 : (lastObject.column - 1) / lastObject.columns" />
-        <Property name="vOffset" :any="object.isFlipped ? 1 : (lastObject.rows - lastObject.row) / lastObject.rows" />
+        <Property
+          name="uOffset"
+          :any="object.isFlipped ? 1 : (lastObject.column - 1) / lastObject.columns"
+        />
+        <Property
+          name="vOffset"
+          :any="object.isFlipped ? 1 : (lastObject.rows - lastObject.row) / lastObject.rows"
+        />
         <Property name="uScale" :any="object.isFlipped ? 1 : 1 / lastObject.columns" />
         <Property name="vScale" :any="object.isFlipped ? 1 : 1 / lastObject.rows" />
       </Texture>
@@ -29,13 +36,20 @@ export default {
     object: Object
   },
   computed: {
+    rotation() {
+      return [0, (this.object.rotation / 180) * Math.PI, 0];
+    },
     deckHeight() {
-      return this.object.depth || this.CARD_HEIGHT * (this.object.objects ? this.object.objects.length : 1)
+      return (
+        this.object.depth ||
+        this.CARD_HEIGHT *
+          (this.object.objects ? this.object.objects.length : 1)
+      );
     },
     lastObject() {
-      return this.object.objects 
-        ? this.object.objects[this.object.objects.length - 1] 
-        : null
+      return this.object.objects
+        ? this.object.objects[this.object.objects.length - 1]
+        : null;
     },
     meshOptions() {
       return {
@@ -46,14 +60,14 @@ export default {
           WHITE_COLOR,
           new BABYLON.Vector4(0, 0, 1, 1),
           WHITE_COLOR
-        ],
-      }
+        ]
+      };
     }
   },
   data() {
     return {
       CARD_HEIGHT: 1 / 100
-    }
+    };
   },
   methods: {},
   mounted() {}
