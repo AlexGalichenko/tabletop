@@ -2,6 +2,7 @@
   <Box
     :position="[object.x, object.z + (object.depth ? object.depth / 2 : 0.25), object.y]"
     :scaling="[object.height / 100, object.depth || 0.5, object.width / 100]"
+    :rotation="rotation"
   >
     <Property name="checkCollisions" :any="true" />
     <Property name="dataObject" :any="object" />
@@ -18,9 +19,13 @@ export default {
   props: {
     object: Object
   },
-  computed: {},
+  computed: {
+    rotation() {
+      return [0, (this.object.rotation / 180) * Math.PI, 0];
+    }
+  },
   methods: {},
-  mounted() {},
+  mounted() {}
 };
 </script>
 

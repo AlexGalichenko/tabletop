@@ -324,14 +324,24 @@ export default {
       this.engine = event.engine;
       this.scene = event.scene;
 
-      var canvas = event.engine.getRenderingCanvas();
-      var startingPoint;
-      var currentMesh;
+      let canvas = event.engine.getRenderingCanvas();
+      let startingPoint;
+      let currentMesh;
       let clickPosition;
 
       canvas.addEventListener("pointerdown", onPointerDown, false);
       canvas.addEventListener("pointerup", onPointerUp, false);
       canvas.addEventListener("pointermove", onPointerMove, false);
+      canvas.addEventListener("wheel", onWheel, false);
+
+      function onWheel(event) {
+        if (currentMesh) {
+          self.$store.dispatch("commitMutation", {
+            mutation: event.deltaY > 0 ? "rotateObjectLeft" : "rotateObjectRight",
+            params: currentMesh.dataObject.id
+          });
+        }
+      }
 
       function getGroundPosition() {
         // Use a predicate to get position on the ground
