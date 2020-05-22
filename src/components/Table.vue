@@ -1,17 +1,15 @@
 <template>
   <div class="table">
+    <!-- Dialogs -->
     <EditDialog
       :showDialog="showEditDialog"
       :object="interactedObject || selectedObject"
       @closeEditDialog="showEditDialog = false"
     />
-
-    <CreateDialog :showDialog="showCreateDialog" @closeCreateDialog="showCreateDialog = false" />
-    <RegisterDialog
-      :showDialog="showRegisterDialog"
-      @closeRegisterDialog="showRegisterDialog = false"
-    />
-    <ImportDialog :showDialog="showImportDialog" @closeImportDialog="showImportDialog = false" />
+    <CreateDialog :showDialog="showCreateDialog" @closeCreateDialog="showCreateDialog = false"/>
+    <RegisterDialog :showDialog="showRegisterDialog" @closeRegisterDialog="showRegisterDialog = false"/>
+    <ImportDialog :showDialog="showImportDialog" @closeImportDialog="showImportDialog = false"/>
+    <ChangeBackgroundDialog :showDialog="showChangeBackgroundDialog" @closeChangeBackgroundDialog="showChangeBackgroundDialog = false"/>
 
     <!-- Players Box -->
     <div class="players">
@@ -32,6 +30,7 @@
       <md-speed-dial-content>
         <md-button class="md-icon-button" @click="showRegisterDialog = true">Register</md-button>
         <md-button class="md-icon-button" @click="leftRoom">Left Room</md-button>
+        <md-button class="md-icon-button" @click="showChangeBackgroundDialog = true">Change Background</md-button>
         <md-button class="md-icon-button" @click="showCreateDialog = true">Create Object</md-button>
         <md-button class="md-icon-button" @click="exportGame">Export</md-button>
         <md-button class="md-icon-button" @click="showImportDialog = true">Import</md-button>
@@ -53,7 +52,7 @@
       >{{toggleHand ? 'Collapse' : 'Expand'}}</md-button>
     </div>
 
-    <Scene @complete="readyScene">
+    <Scene @scene="readyScene" @engine="readyEngine">
       <Property name="collisionsEnabled" :any="true" />
       <Camera type="arcRotate" :alpha="0" :beta="0" :radius="30">
         <Property name="checkCollisions" :any="true" />
@@ -69,7 +68,7 @@
         <Property name="name" :any="'table'" />
         <Material>
           <Texture
-            :src="'https://media.istockphoto.com/photos/green-worn-poker-or-pool-table-felt-texture-picture-id481055059?k=6&m=481055059&s=612x612&w=0&h=1jEKknomRjh0Kxh50sF-2-M_QgSltF8jcYmp-6RuUoI='"
+            :src="game.background"
           >
             <Property name="uScale" :any="10" />
             <Property name="vScale" :any="10" />
@@ -130,11 +129,17 @@
     </Scene>
 
     <div :style="dropdownStyle">
-      <md-menu :md-active="showDropdown" @md-closed="showDropdown = false">
-        <md-menu-content>
+      <md-menu 
+        :md-active="showDropdown"
+        :md-close-on-select="false"
+        :md-close-on-click="false"
+        @md-closed="showDropdown = false"
+      >
+        <md-menu-content class="contextMenu">
+          <md-menu-item @click="showDealDropdown = !showDealDropdown">Deal</md-menu-item>
           <md-menu-item @click="flip">Flip</md-menu-item>
           <md-menu-item @click="takeObjectFromContainer">Take From Container</md-menu-item>
-          <md-menu-item @click="takeObjectFromContainerToHand">Take From Container To Hand</md-menu-item>
+          <!-- <md-menu-item @click="takeObjectFromContainerToHand">Take From Container To Hand</md-menu-item> -->
           <md-menu-item @click="draw">Draw</md-menu-item>
           <md-menu-item @click="shuffle">Shuffle</md-menu-item>
           <md-menu-item @click="copy">Copy</md-menu-item>
@@ -145,6 +150,20 @@
           >{{(interactedObject && interactedObject.isPinned) ? "Unpin" : "Pin"}}</md-menu-item>
         </md-menu-content>
       </md-menu>
+
+      <md-menu :md-active="showDealDropdown" @md-closed="showDealDropdown = false" :md-close-on-select="false" :md-close-on-click="false" :style="level2dropdownStyle">
+        <md-menu-content>
+          <md-menu-item @click="deal(players.map(p => p.uid))">All</md-menu-item>
+          <md-menu-item 
+            v-for="player in game.players" :key="'player' + player.displayName"
+            @click="deal([player.uid])"
+          >
+            <span :style="'color:' + player.color">
+              {{player.displayName}}
+            </span>
+          </md-menu-item>
+        </md-menu-content>
+      </md-menu>
     </div>
   </div>
 </template>
@@ -152,13 +171,17 @@
 <script>
 import interact from "interactjs";
 import uniqid from "uniqid";
+import { BABYLON } from "vue-babylonjs";
 
+//Dialogs
 import GameObject from "./GameObject.vue";
 import EditDialog from "./overlay/EditDialog.vue";
 import CreateDialog from "./overlay/CreateDialog.vue";
 import RegisterDialog from "./overlay/RegisterDialog.vue";
 import ImportDialog from "./overlay/ImportDialog.vue";
+import ChangeBackgroundDialog from "./overlay/ChangeBackgroundDialog.vue";
 
+//Game Objects
 import Card from "./objects/Card.vue";
 import Container from "./objects/Container.vue";
 import Deck from "./objects/Deck.vue";
@@ -168,7 +191,6 @@ import TileCoin from "./objects/TileCoin.vue";
 import Counter from "./objects/Counter.vue";
 
 import { getSelectedIndexes } from "../utils/utils.js";
-import * as BABYLON from "babylonjs";
 
 export default {
   name: "Table",
@@ -178,6 +200,7 @@ export default {
     CreateDialog,
     RegisterDialog,
     ImportDialog,
+    ChangeBackgroundDialog,
 
     Card,
     Container,
@@ -193,20 +216,28 @@ export default {
       showCreateDialog: false,
       showRegisterDialog: false,
       showImportDialog: false,
+      showChangeBackgroundDialog: false,
+
       selectedObject: null,
+      interactedObject: null,
+
       toggleHand: true,
-      scene: null,
+
+      scene:  null,
       engine: null,
+
       showDropdown: false,
+      showDealDropdown: false,
       dropdownTop: 0,
       dropdownLeft: 0,
-      interactedObject: null
-      // camera:
     };
   },
   computed: {
     dropdownStyle() {
       return `position: absolute; top: ${this.dropdownTop}px; left: ${this.dropdownLeft}px`;
+    },
+    level2dropdownStyle() {
+      return `position: relative; top: 0px; left: 185px`;
     },
     ownerfull() {
       return this.game && this.$store.state.user
@@ -270,10 +301,13 @@ export default {
         params: this.interactedObject.id
       });
     },
-    takeObjectFromContainerToHand() {
+    deal(playerIds) {
       this.$store.dispatch("commitMutation", {
-        mutation: "takeObjectFromContainerToHand",
-        params: this.interactedObject.id
+        mutation: "deal",
+        params: {
+          containerId: this.interactedObject.id,
+          playerIds: playerIds
+        }
       });
     },
     pin() {
@@ -293,9 +327,8 @@ export default {
         this.$store.dispatch("commitMutation", {
         mutation: "flipDeck",
         params: this.interactedObject.id
-      });
+        });
       }
-
     },
     register() {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
@@ -319,12 +352,23 @@ export default {
       element.click();
       document.body.removeChild(element);
     },
-    readyScene(event) {
+    readyEngine(engine) {
+      this.engine = engine;
+    },
+    readyScene(scene) {
       const self = this;
-      this.engine = event.engine;
-      this.scene = event.scene;
+      self.scene = scene;
+      this.engine.enableOfflineSupport = false;
+      var options = new BABYLON.SceneOptimizerOptions(80, 500);
+      var optimizer = new BABYLON.SceneOptimizer(
+        self.scene, 
+        BABYLON.SceneOptimizerOptions.HighDegradationAllowed(), 
+        true,
+        true
+      );
+      optimizer.start();
 
-      let canvas = event.engine.getRenderingCanvas();
+      let canvas = this.engine.getRenderingCanvas();
       let startingPoint;
       let currentMesh;
       let clickPosition;
@@ -345,11 +389,11 @@ export default {
 
       function getGroundPosition() {
         // Use a predicate to get position on the ground
-        var pickinfo = event.scene.pick(
-          event.scene.pointerX,
-          event.scene.pointerY,
+        var pickinfo = self.scene.pick(
+          self.scene.pointerX,
+          self.scene.pointerY,
           function(mesh) {
-            return mesh == event.scene.meshes[0];
+            return mesh == self.scene.meshes[0];
           }
         );
 
@@ -361,11 +405,11 @@ export default {
       }
 
       function onPointerDown(evt) {
-        var pickInfo = event.scene.pick(
-          event.scene.pointerX,
-          event.scene.pointerY,
+        var pickInfo = self.scene.pick(
+          self.scene.pointerX,
+          self.scene.pointerY,
           function(mesh) {
-            return mesh !== event.scene.meshes[0];
+            return mesh !== self.scene.meshes[0];
           }
         );
         if (evt.button === 0) {
@@ -376,7 +420,7 @@ export default {
             if (startingPoint) {
               // we need to disconnect camera from canvas
               setTimeout(function() {
-                event.scene.activeCamera.detachControl(canvas);
+                self.scene.activeCamera.detachControl(canvas);
               }, 0);
             }
           }
@@ -395,11 +439,11 @@ export default {
       }
 
       function onPointerUp(evt) {
-        const pickInfo = event.scene.pick(
-          event.scene.pointerX,
-          event.scene.pointerY,
+        const pickInfo = self.scene.pick(
+          self.scene.pointerX,
+          self.scene.pointerY,
           function(mesh) {
-            return mesh !== event.scene.meshes[0];
+            return mesh !== self.scene.meshes[0];
           }
         );
         //Counter
@@ -420,7 +464,7 @@ export default {
               pickInfo.pickedPoint,
               new BABYLON.Vector3(0, -1, 0)
             );
-            const underlyingMeshPickInfo = event.scene.pickWithRay(ray, item =>
+            const underlyingMeshPickInfo = self.scene.pickWithRay(ray, item =>
               item.id !== currentMesh.id && item.name !== "entity"
                 ? item
                 : null
@@ -460,7 +504,7 @@ export default {
         }
         if (startingPoint) {
           currentMesh = null;
-          event.scene.activeCamera.attachControl(canvas, true);
+          self.scene.activeCamera.attachControl(canvas, true);
           startingPoint = null;
           self.interactedObject = null;
           return;

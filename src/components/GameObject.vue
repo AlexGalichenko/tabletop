@@ -28,20 +28,20 @@
         <md-menu-item v-if="cardLike" @click="flip">Flip</md-menu-item>
         <md-menu-item v-if="cardLike" @click="draw">Draw</md-menu-item>
         <md-menu-item v-if="cardLike" @click="play">Play</md-menu-item>
-        <md-menu-item v-if="dice" @click="roll">Roll</md-menu-item>
-        <md-menu-item @click="pin">{{pinned}}</md-menu-item>
+        <!-- <md-menu-item v-if="dice" @click="roll">Roll</md-menu-item> -->
+        <!-- <md-menu-item @click="pin">{{pinned}}</md-menu-item> -->
 
-        <md-menu-item v-if="container" @click="takeObjectFromContainer">Take From Container</md-menu-item>
-        <md-menu-item
+        <!-- <md-menu-item v-if="container" @click="takeObjectFromContainer">Take From Container</md-menu-item> -->
+        <!-- <md-menu-item
           v-if="container"
           @click="takeObjectFromContainerToHand"
-        >Take From Container To Hand</md-menu-item>
-        <md-menu-item v-if="container" @click="shuffleContainer">Shuffle</md-menu-item>
+        >Take From Container To Hand</md-menu-item> -->
+        <!-- <md-menu-item v-if="container" @click="shuffleContainer">Shuffle</md-menu-item> -->
 
-        <md-menu-item v-if="counter" @click="set0">Set 0</md-menu-item>
-        <md-menu-item @click="rotateLeft">&lt;</md-menu-item>
-        <md-menu-item @click="rotateRight">&gt;</md-menu-item>
-        <md-menu-item @click="$emit('showEditDialog', id)">Edit</md-menu-item>
+        <!-- <md-menu-item v-if="counter" @click="set0">Set 0</md-menu-item> -->
+        <!-- <md-menu-item @click="rotateLeft">&lt;</md-menu-item> -->
+        <!-- <md-menu-item @click="rotateRight">&gt;</md-menu-item> -->
+        <!-- <md-menu-item @click="$emit('showEditDialog', id)">Edit</md-menu-item> -->
         <md-menu-item @click="deleteObject">Delete Object</md-menu-item>
       </md-menu-content>
     </md-menu>
@@ -49,12 +49,10 @@
 </template>
 
 <script>
-import Table from "./Table.vue";
+import { BABYLON } from "vue-babylonjs";
 
 export default {
-  components: {
-    Table
-  },
+  components: {},
   props: {
     object: Object,
     id: String

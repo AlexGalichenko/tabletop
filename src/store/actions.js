@@ -105,7 +105,11 @@ export default {
 
   commitMutation({commit, dispatch}, {mutation, params}) {
     commit(mutation, params);
-    if (["deleteObject", "putObjectToContainer"].includes(mutation)) {
+    if ([
+      "deleteObject",
+      "putObjectToContainer",
+      "updateBackground"
+    ].includes(mutation)) {
       dispatch("putData");
     } else {
       dispatch("updateObjects");

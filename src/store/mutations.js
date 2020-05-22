@@ -160,20 +160,30 @@ export default {
     container.new = true;
   },
 
-  takeObjectFromContainerToHand(state, containerId) {
+  deal(state, params) {
+    const {containerId, playerIds} = params;
     const container = state.game.objects.find(c => c.id === containerId);
-    if (container.objects && container.objects.length > 0) {
-      const object = container.objects.pop();
-
-      object.x = 0;
-      object.y = 0;
-      object.z = 0;
-      object.isFlipped = false;
-      object.owner = state.user.uid;
-      object.new = true;
-      state.game.objects.push(object);
-      container.new = true;
-    }
+    playerIds.forEach(playerId => {
+      if (container.objects && container.objects.length > 0) {
+        const object = container.infinite 
+          ? container.objects[0]
+          : container.objects.pop();
+        if (object) {
+          if (container.infinite) {
+            object.id = uniqid();
+          }
+    
+          object.x = 0;
+          object.y = 0;
+          object.z = 0;
+          object.isFlipped = false;
+          object.owner = playerId;
+          object.new = true;
+          state.game.objects.push(object);
+          container.new = true;
+        }
+      }
+    });
   },
 
   putObjectToContainer(state, params) {
@@ -323,6 +333,11 @@ export default {
     const object = state.game.objects.find(obj => obj.id === objectId)
     object.value = Math.ceil(Math.random() * object.edges)
     object.new = true;
+  },
+
+  updateBackground(state, background) {
+    console.log(background)
+    state.game.background = background;
   },
 
   /* Room

@@ -25,7 +25,6 @@ export default {
     scrollRight
   },
   mounted() {},
-  computed: {}
 };
 </script>
 
