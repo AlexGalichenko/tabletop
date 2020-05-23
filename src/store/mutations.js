@@ -1,5 +1,6 @@
 import Vue from "vue";
 import uniqid from "uniqid";
+import cloneDeep from "clone-deep";
 import { getZ } from "../utils/utils.js";
 
 const ROTATION_STEP = 15;
@@ -46,6 +47,17 @@ export default {
     }
     createdDeck.new = true;
     objects.push(createdDeck);
+  },
+
+  copyObject(state, containerId) {
+    const object = state.game.objects.find(c => c.id === containerId);
+    const clone = cloneDeep(object)
+    clone.x = object.x + 25;
+    clone.y = object.y + 25;
+    clone.z = getZ(),
+    clone.id = uniqid(),
+    state.game.objects.push(clone);
+    clone.new = true;
   },
 
   createContainer(state, params) {

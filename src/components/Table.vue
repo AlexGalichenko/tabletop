@@ -16,14 +16,16 @@
     <RegisterDialog :showDialog="showRegisterDialog" @closeRegisterDialog="showRegisterDialog = false" />
     <ImportDialog :showDialog="showImportDialog" @closeImportDialog="showImportDialog = false" />
 
-    <GameObject
-      v-for="(object, index) in ownerless"
-      :key="index"
-      :id="object.id"
-      :data-id="object.id"
-      :object="object"
-      @showEditDialog="showEditDialogHandler"
-    />
+    <div id="scalable-table" :style="scaleTableStyle" @mousewheel.prevent="tableScaleChange"> 
+      <GameObject
+        v-for="(object, index) in ownerless"
+        :key="index"
+        :id="object.id"
+        :data-id="object.id"
+        :object="object"
+        @showEditDialog="showEditDialogHandler"
+      />
+    </div> 
 
     <!-- Players Box -->
     <div class="players">
@@ -51,14 +53,14 @@
     </md-speed-dial>
 
     <div :class="handClass">
-      <GameObject
-        v-for="(object, index) in ownerfull"
-        :key="index"
-        :id="object.id"
-        :data-id="object.id"
-        :object="object"
-        @showEditDialog="showEditDialogHandler"
-      />
+        <GameObject
+          v-for="(object, index) in ownerfull"
+          :key="index"
+          :id="object.id"
+          :data-id="object.id"
+          :object="object"
+          @showEditDialog="showEditDialogHandler"
+        />
       <md-button class="md-primary expand" @click="toggleHand = !toggleHand">{{toggleHand ? 'Collapse' : 'Expand'}}</md-button>
     </div>
 
@@ -94,9 +96,17 @@ export default {
       showImportDialog: false,
       selectedObject: null,
       toggleHand: true,
+      tableScale: 1,
     };
   },
   computed: {
+    scaleTableStyle() {
+      return {
+        transform: `scale(${this.tableScale})`,
+        height: "100%",
+        width: "100%",
+      }
+    },
     ownerfull() {
       return this.$store.state.user ? this.game.objects.filter(o => o.owner === this.$store.state.user.uid) : []
     },
@@ -117,6 +127,13 @@ export default {
     }
   },
   methods: {
+    tableScaleChange(event) {
+      if (this.tableScale - event.deltaY / 5000 > 1) {
+        this.tableScale = 1;
+      } else {
+        this.tableScale -= event.deltaY / 5000;
+      }
+    },
     register() {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
     },
@@ -143,7 +160,31 @@ export default {
     this.$store.commit("setRoomId", this.$route.params.id);
     this.$store.dispatch("getData");
 
-    interact(".draggable").draggable({
+    interact("#scalable-table .draggable").draggable({
+      ignoreFrom: ".pinned",
+      inertia: {
+        resistance: 60
+      },
+      restrict: {
+        restriction: "parent",
+        endOnly: false,
+        elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
+      },
+      // autoScroll: true,
+      listeners: {
+        move: function(event) {
+          self.$store.dispatch("commitMutation", {
+            mutation: "moveObject",
+            params: {
+              event,
+              scale: self.tableScale
+            }
+          });
+        }
+      }
+    });
+
+    interact(".hand .draggable").draggable({
       ignoreFrom: ".pinned",
       inertia: {
         resistance: 60
@@ -201,9 +242,16 @@ export default {
 <style scoped>
 .table {
   background-color: darkslategray;
-  width: 4000px;
-  height: 2500px;
+  width: 6500px;
+  height: 6500px;
 }
+
+#scalable-table {
+  background-color: rebeccapurple;
+  width: 5500px;
+  height: 5500px;
+}
+
 .draggable {
   position: absolute;
   touch-action: none;
