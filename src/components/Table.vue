@@ -5,7 +5,6 @@
     @keyup.prevent.81="rotateLeft"
     @keyup.prevent.69="rotateRight"
   >
-    
     <EditDialog
       :showDialog="showEditDialog"
       :object="selectedObject"
@@ -13,10 +12,13 @@
     />
 
     <CreateDialog :showDialog="showCreateDialog" @closeCreateDialog="showCreateDialog = false" />
-    <RegisterDialog :showDialog="showRegisterDialog" @closeRegisterDialog="showRegisterDialog = false" />
+    <RegisterDialog
+      :showDialog="showRegisterDialog"
+      @closeRegisterDialog="showRegisterDialog = false"
+    />
     <ImportDialog :showDialog="showImportDialog" @closeImportDialog="showImportDialog = false" />
 
-    <div id="scalable-table" :style="scaleTableStyle" @mousewheel.prevent="tableScaleChange"> 
+    <div id="scalable-table" :style="scaleTableStyle" @mousewheel.prevent="tableScaleChange">
       <GameObject
         v-for="(object, index) in ownerless"
         :key="index"
@@ -25,7 +27,7 @@
         :object="object"
         @showEditDialog="showEditDialogHandler"
       />
-    </div> 
+    </div>
 
     <!-- Players Box -->
     <div class="players">
@@ -53,17 +55,19 @@
     </md-speed-dial>
 
     <div :class="handClass">
-        <GameObject
-          v-for="(object, index) in ownerfull"
-          :key="index"
-          :id="object.id"
-          :data-id="object.id"
-          :object="object"
-          @showEditDialog="showEditDialogHandler"
-        />
-      <md-button class="md-primary expand" @click="toggleHand = !toggleHand">{{toggleHand ? 'Collapse' : 'Expand'}}</md-button>
+      <GameObject
+        v-for="(object, index) in ownerfull"
+        :key="index"
+        :id="object.id"
+        :data-id="object.id"
+        :object="object"
+        @showEditDialog="showEditDialogHandler"
+      />
+      <md-button
+        class="md-primary expand"
+        @click="toggleHand = !toggleHand"
+      >{{toggleHand ? 'Collapse' : 'Expand'}}</md-button>
     </div>
-
   </div>
 </template>
 
@@ -96,22 +100,30 @@ export default {
       showImportDialog: false,
       selectedObject: null,
       toggleHand: true,
-      tableScale: 1,
+
+      scale: 1,
+      pos: { x: 0, y: 0 },
+      zoomTarget: { x: 0, y: 0 },
+      zoomPoint: { x: 0, y: 0 }
     };
   },
   computed: {
     scaleTableStyle() {
       return {
-        transform: `scale(${this.tableScale})`,
+        transform: `translate(${this.pos.x}px,${this.pos.y}px) scale(${this.scale},${this.scale})`,
         height: "100%",
-        width: "100%",
-      }
+        width: "100%"
+      };
     },
     ownerfull() {
-      return this.$store.state.user ? this.game.objects.filter(o => o.owner === this.$store.state.user.uid) : []
+      return this.$store.state.user
+        ? this.game.objects.filter(o => o.owner === this.$store.state.user.uid)
+        : [];
     },
     ownerless() {
-      return this.game.objects.filter(o => o.owner === undefined || o.owner === '')
+      return this.game.objects.filter(
+        o => o.owner === undefined || o.owner === ""
+      );
     },
     players() {
       return this.game.players ? Object.values(this.game.players) : [];
@@ -123,31 +135,66 @@ export default {
       return this.$store.state.game;
     },
     handClass() {
-      return `hand ${this.toggleHand ? "expanded" : "collapsed"}`
+      return `hand ${this.toggleHand ? "expanded" : "collapsed"}`;
     }
   },
   methods: {
     tableScaleChange(event) {
-      if (this.tableScale - event.deltaY / 5000 > 1) {
-        this.tableScale = 1;
-      } else {
-        this.tableScale -= event.deltaY / 5000;
+      const MAX_SCALE = 5;
+      const FACTOR = 0.5;
+      const target = window.document.querySelector("#scalable-table");
+      const size = {
+        w: 6500,
+        h: 6500,
+      };
+      console.log(size)
+      // const offset = target.offset;
+      this.zoomPoint.x = event.pageX - target.offsetLeft;
+      this.zoomPoint.y = event.pageY - target.offsetTop;
+
+      var delta = event.deltaY;
+      if (delta === undefined) {
+        delta = event.originalEvent.detail;
       }
+      delta = Math.max(-1, Math.min(1, delta)); // cap the delta to [-1,1] for cross browser consistency
+
+      // determine the point on where the slide is zoomed in
+      this.zoomTarget.x = (this.zoomPoint.x - this.pos.x) / this.scale;
+      this.zoomTarget.y = (this.zoomPoint.y - this.pos.y) / this.scale;
+      // apply zoom
+      this.scale += delta * FACTOR * this.scale;
+      this.scale = Math.max(1, Math.min(MAX_SCALE, this.scale));
+
+      // calculate x and y based on zoom
+      this.pos.x = -this.zoomTarget.x * this.scale + this.zoomPoint.x;
+      this.pos.y = -this.zoomTarget.y * this.scale + this.zoomPoint.y;
+
+      // Make sure the slide stays in its container area when zooming out
+      // if (this.pos.x > 0) this.pos.x = 0;
+      if (this.pos.x + size.w * this.scale < size.w)
+        this.pos.x = -size.w * (this.scale - 1);
+      // if (this.pos.y > 0) this.pos.y = 0;
+      if (this.pos.y + size.h * this.scale < size.h)
+        this.pos.y = -size.h * (this.scale - 1);
     },
     register() {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
     },
     leftRoom() {
-        this.$store.dispatch("leftRoom", this.$store.state.user.uid);
+      this.$store.dispatch("leftRoom", this.$store.state.user.uid);
     },
     showEditDialogHandler(id) {
       this.selectedObject = this.game.objects.find(obj => obj.id === id);
       this.showEditDialog = true;
     },
     exportGame() {
-      const element = document.createElement('a');
-      const url = element.setAttribute('href', 'data:text/json;charset=utf-8,' + window.encodeURIComponent(JSON.stringify(this.game)));
-      element.setAttribute('download', 'game.json');
+      const element = document.createElement("a");
+      const url = element.setAttribute(
+        "href",
+        "data:text/json;charset=utf-8," +
+          window.encodeURIComponent(JSON.stringify(this.game))
+      );
+      element.setAttribute("download", "game.json");
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
@@ -177,7 +224,7 @@ export default {
             mutation: "moveObject",
             params: {
               event,
-              scale: self.tableScale
+              scale: self.scale
             }
           });
         }
@@ -250,6 +297,8 @@ export default {
   background-color: rebeccapurple;
   width: 5500px;
   height: 5500px;
+  transition: transform .1s;
+  transform-origin: 0 0;
 }
 
 .draggable {
@@ -276,11 +325,11 @@ export default {
 }
 
 .hand.expanded {
-    bottom: 0vh;
+  bottom: 0vh;
 }
 
 .hand.collapsed {
-    bottom: -250px;
+  bottom: -250px;
 }
 
 .hand .expand {
@@ -298,5 +347,4 @@ export default {
   background: rgba(0, 0, 0, 0.1);
   z-index: 100000000;
 }
-
 </style>

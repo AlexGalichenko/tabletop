@@ -159,20 +159,40 @@ export default {
     container.new = true;
   },
 
-  takeObjectFromContainerToHand(state, containerId) {
-    const container = state.game.objects.find(c => c.id === containerId);
-    if (container.objects && container.objects.length > 0) {
-      const object = container.objects.pop();
-
-      object.x = 0;
-      object.y = 0;
-      object.z = 0;
-      object.owner = state.user.uid;
-      object.new = true;
-      state.game.objects.push(object);
-      container.new = true;
+  deal(state, params) {
+    const {containerId, playerIds} = params;
+    const dealObject = state.game.objects.find(c => c.id === containerId);
+    //Check if deal object is not a container
+    if (dealObject.type !== "container") {
+      dealObject.x = 0;
+      dealObject.y = 0;
+      dealObject.z = 0;
+      dealObject.isFlipped = false;
+      dealObject.owner = playerIds[0];
+      dealObject.new = true;
+    } else {
+      playerIds.forEach(playerId => {
+        if (dealObject.objects && dealObject.objects.length > 0) {
+          const object = dealObject.infinite 
+            ? dealObject.objects[0]
+            : dealObject.objects.pop();
+          if (object) {
+            if (dealObject.infinite) {
+              object.id = uniqid();
+            }
+      
+            object.x = 0;
+            object.y = 0;
+            object.z = 0;
+            object.isFlipped = false;
+            object.owner = playerId;
+            object.new = true;
+            state.game.objects.push(object);
+            dealObject.new = true;
+          }
+        }
+      });
     }
-    state.selectedIndexes = [];
   },
 
   putObjectToContainer(state, params) {
@@ -245,6 +265,17 @@ export default {
     const object = state.game.objects.find(obj => obj.id === objectId)
     object.isFlipped = !object.isFlipped
     object.new = true;
+  },
+
+  flipDeck(state, objectId) {
+    const deck = state.game.objects.find(obj => obj.id === objectId)
+    deck.isFlipped = !deck.isFlipped
+    deck.objects.reverse();
+    deck.objects = deck.objects.map(card => {
+      card.isFlipped = !card.isFlipped;
+      return card
+    })
+    deck.new = true;
   },
 
   pinObject(state, objectId) {
