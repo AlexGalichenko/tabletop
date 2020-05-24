@@ -22,11 +22,12 @@ export default {
       state.game.objects = []
     }
     const objects = state.game.objects;
+    const table = window.document.querySelector("#scalable-table");
     const createdDeck = {
       ...params,
       url: params.backUrl,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
+      x: -parseInt(table.style.marginLeft) + 100,
+      y: -parseInt(table.style.marginTop) + 100,
       z: getZ(),
       rotation: 0,
       isFlipped: false
@@ -65,10 +66,11 @@ export default {
       state.game.objects = []
     }
     const objects = state.game.objects;
+    const table = window.document.querySelector("#scalable-table");
     const createdContainer = {
       ...params,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
+      x: -parseInt(table.style.marginLeft) + 100,
+      y: -parseInt(table.style.marginTop) + 100,
       z: getZ(),
       rotation: 0,
       isFlipped: false
@@ -82,10 +84,11 @@ export default {
       state.game.objects = []
     }
     const objects = state.game.objects;
+    const table = window.document.querySelector("#scalable-table");
     const createdTile = {
       ...params,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
+      x: -parseInt(table.style.marginLeft) + 100,
+      y: -parseInt(table.style.marginTop) + 100,
       z: getZ(),
       rotation: 0,
       isFlipped: false
@@ -99,10 +102,11 @@ export default {
       state.game.objects = []
     }
     const objects = state.game.objects;
+    const table = window.document.querySelector("#scalable-table");
     const createdCounter = {
       ...params,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
+      x: -parseInt(table.style.marginLeft) + 100,
+      y: -parseInt(table.style.marginTop) + 100,
       z: getZ(),
       rotation: 0,
       isFlipped: false
@@ -116,10 +120,11 @@ export default {
       state.game.objects = []
     }
     const objects = state.game.objects;
+    const table = window.document.querySelector("#scalable-table");
     const createdDice = {
       ...params,
-      x: window.scrollX + 100,
-      y: window.scrollY + 100,
+      x: -parseInt(table.style.marginLeft) + 100,
+      y: -parseInt(table.style.marginTop) + 100,
       z: getZ(),
       rotation: 0,
       isFlipped: false
@@ -137,6 +142,28 @@ export default {
 
       if (container.infinite) {
         object.id = uniqid();
+      }
+      object.x = container.x + 25;
+      object.y = container.y + 25;
+      object.z = getZ();
+      object.owner = "";
+      object.new = true;
+      state.game.objects.push(object);
+      container.new = true;
+    }
+  },
+
+  takeCertainObjectFromContainer(state, params) {
+    const {containerId, objectId} = params;
+    const container = state.game.objects.find(c => c.id === containerId);
+    if (container.objects && container.objects.length > 0) {
+      const objectIndex = container.objects.findIndex(obj => obj.id === objectId);
+      const object = container.objects[objectIndex]; 
+      if (container.infinite) {
+        object.id = uniqid();
+      } 
+      else {
+        container.objects.splice(objectIndex, 1)
       }
       object.x = container.x + 25;
       object.y = container.y + 25;
@@ -253,8 +280,8 @@ export default {
   playObject(state, objectId) {
     const object = state.game.objects.find(obj => obj.id === objectId)
     if (object.owner === state.user.uid) {
-      const table = window.document.querySelector("#scalable-table");
       object.owner = "";
+      const table = window.document.querySelector("#scalable-table");
       object.x = -parseInt(table.style.marginLeft) + 100;
       object.y = -parseInt(table.style.marginTop) + 100;
       object.z = 100000020;
@@ -294,7 +321,6 @@ export default {
     const object = state.game.objects.find(obj => obj.id === params.objectId)
     delete params.objectId;
     Object.entries(params).forEach(entry => {
-      console.log(entry)
       if (object[entry[0]] !== undefined && entry[1]) {
         object[entry[0]] = entry[1];
       }
@@ -337,6 +363,10 @@ export default {
     const object = state.game.objects.find(obj => obj.id === objectId)
     object.value = Math.ceil(Math.random() * object.edges)
     object.new = true;
+  },
+
+  updateBackground(state, background) {
+    state.game.background = background;
   },
 
   /* Room

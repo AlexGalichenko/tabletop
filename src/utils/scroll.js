@@ -1,7 +1,6 @@
 const DELTA = 50;
 
 export function scrollDown() {
-  console.log("fired down")
   window.scrollBy(0, DELTA)
 }
 

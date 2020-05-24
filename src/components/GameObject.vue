@@ -31,7 +31,8 @@
         <md-menu-item v-if="dice" @click="roll">Roll</md-menu-item>
         <md-menu-item @click="pin">{{pinned}}</md-menu-item>
 
-        <md-menu-item v-if="container" @click="takeObjectFromContainer">Take From Container</md-menu-item>
+        <md-menu-item v-if="container" @click="takeObjectFromContainer">Take</md-menu-item>
+        <md-menu-item v-if="container" @click="$emit('showSearchDialog', id)">Search</md-menu-item>
         <md-menu-item v-if="container" @click="shuffleContainer">Shuffle</md-menu-item>
 
         <md-menu-item v-if="counter" @click="set0">Set 0</md-menu-item>
@@ -39,7 +40,7 @@
         <md-menu-item @click="rotateRight">&gt;</md-menu-item>
         <md-menu-item @click="$emit('showEditDialog', id)">Edit</md-menu-item>
         <md-menu-item @click="copyObject">Copy</md-menu-item>
-        <md-menu-item @click="deleteObject">Delete Object</md-menu-item>
+        <md-menu-item @click="deleteObject">Delete</md-menu-item>
       </md-menu-content>
     </md-menu>
 
@@ -123,15 +124,11 @@ export default {
           this.$store.state.user &&
           this.object.owner !== this.$store.state.user.uid);
       const background = isFlipped ? this.object.backUrl : this.object.url;
-      const border =
-        this.object.owner &&
-        this.$store.state.user &&
-        this.object.owner !== this.$store.state.user.uid
+      const border = this.object.owner && this.$store.state.user && this.object.owner !== this.$store.state.user.uid
           ? "2px solid gray"
-          : this.$store.state.user &&
-            this.object.owner === this.$store.state.user.uid
-          ? "2px solid green"
-          : "0px";
+          : this.$store.state.user && this.object.owner === this.$store.state.user.uid
+            ? "2px solid green"
+            : "0px";
       const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
