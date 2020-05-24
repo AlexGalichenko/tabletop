@@ -38,6 +38,7 @@
         <md-menu-item @click="rotateLeft">&lt;</md-menu-item>
         <md-menu-item @click="rotateRight">&gt;</md-menu-item>
         <md-menu-item @click="$emit('showEditDialog', id)">Edit</md-menu-item>
+        <md-menu-item @click="copyObject">Copy</md-menu-item>
         <md-menu-item @click="deleteObject">Delete Object</md-menu-item>
       </md-menu-content>
     </md-menu>
@@ -319,6 +320,12 @@ export default {
     deleteObject() {
       this.$store.dispatch("commitMutation", {
         mutation: "deleteObject",
+        params: this.id
+      });
+    },
+    copyObject() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "copyObject",
         params: this.id
       });
     },

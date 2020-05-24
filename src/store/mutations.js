@@ -253,9 +253,10 @@ export default {
   playObject(state, objectId) {
     const object = state.game.objects.find(obj => obj.id === objectId)
     if (object.owner === state.user.uid) {
+      const table = window.document.querySelector("#scalable-table");
       object.owner = "";
-      object.x = window.scrollX + 100;
-      object.y = window.scrollY + 100;
+      object.x = -parseInt(table.style.marginLeft) + 100;
+      object.y = -parseInt(table.style.marginTop) + 100;
       object.z = 100000020;
       object.new = true;
     }

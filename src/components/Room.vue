@@ -4,6 +4,7 @@
     @keydown.87="scrollUp"
     @keydown.65="scrollLeft"
     @keydown.68="scrollRight"
+    tabindex="1"
   >
     <Table />
   </div>
@@ -29,8 +30,7 @@ export default {
     scrollLeft,
     scrollRight
   },
-  mounted() {},
-  computed: {}
+  mounted() {}
 };
 </script>
 

@@ -22,8 +22,7 @@ export default {
     login() {
       this.$store.dispatch("signInWithGoogle");
     }
-  },
-  computed: {}
+  }
 };
 </script>
 

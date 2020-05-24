@@ -1,4 +1,4 @@
-const DELTA = 10;
+const DELTA = 50;
 
 export function scrollDown() {
   console.log("fired down")

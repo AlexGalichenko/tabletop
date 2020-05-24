@@ -40,8 +40,7 @@ export default {
       this.$router.push(`/room/${this.roomId}`);
     }
   },
-  mounted() {},
-  computed: {}
+  mounted() {}
 };
 </script>
 

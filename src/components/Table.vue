@@ -46,11 +46,11 @@
       </md-speed-dial-target>
 
       <md-speed-dial-content>
-        <md-button class="md-icon-button" @click="showRegisterDialog = true">Register</md-button>
-        <md-button class="md-icon-button" @click="leftRoom">Left Room</md-button>
-        <md-button class="md-icon-button" @click="showCreateDialog = true">Create Object</md-button>
-        <md-button class="md-icon-button" @click="exportGame">Export</md-button>
-        <md-button class="md-icon-button" @click="showImportDialog = true">Import</md-button>
+        <md-button class="md-icon-button" @click="showRegisterDialog = true"><i class="fas fa-door-open"/></md-button>
+        <md-button class="md-icon-button" @click="leftRoom"><i class="fas fa-door-closed"/></md-button>
+        <md-button class="md-icon-button" @click="showCreateDialog = true"><i class="fas fa-plus-circle"/></md-button>
+        <md-button class="md-icon-button" @click="exportGame"><i class="fas fa-download"/></md-button>
+        <md-button class="md-icon-button" @click="showImportDialog = true"><i class="fas fa-upload"/></md-button>
       </md-speed-dial-content>
     </md-speed-dial>
 
@@ -140,15 +140,13 @@ export default {
   },
   methods: {
     tableScaleChange(event) {
-      const MAX_SCALE = 5;
-      const FACTOR = 0.5;
+      const MAX_SCALE = 4;
+      const FACTOR = 0.3;
       const target = window.document.querySelector("#scalable-table");
       const size = {
         w: 6500,
         h: 6500,
       };
-      console.log(size)
-      // const offset = target.offset;
       this.zoomPoint.x = event.pageX - target.offsetLeft;
       this.zoomPoint.y = event.pageY - target.offsetTop;
 
@@ -158,22 +156,17 @@ export default {
       }
       delta = Math.max(-1, Math.min(1, delta)); // cap the delta to [-1,1] for cross browser consistency
 
-      // determine the point on where the slide is zoomed in
       this.zoomTarget.x = (this.zoomPoint.x - this.pos.x) / this.scale;
       this.zoomTarget.y = (this.zoomPoint.y - this.pos.y) / this.scale;
-      // apply zoom
-      this.scale += delta * FACTOR * this.scale;
-      this.scale = Math.max(1, Math.min(MAX_SCALE, this.scale));
 
-      // calculate x and y based on zoom
+      this.scale += -delta * FACTOR * this.scale;
+      this.scale = Math.max(1, Math.min(MAX_SCALE, this.scale));
       this.pos.x = -this.zoomTarget.x * this.scale + this.zoomPoint.x;
       this.pos.y = -this.zoomTarget.y * this.scale + this.zoomPoint.y;
-
-      // Make sure the slide stays in its container area when zooming out
-      // if (this.pos.x > 0) this.pos.x = 0;
+      if (this.pos.x > 0) this.pos.x = 0;
       if (this.pos.x + size.w * this.scale < size.w)
         this.pos.x = -size.w * (this.scale - 1);
-      // if (this.pos.y > 0) this.pos.y = 0;
+      if (this.pos.y > 0) this.pos.y = 0;
       if (this.pos.y + size.h * this.scale < size.h)
         this.pos.y = -size.h * (this.scale - 1);
     },
@@ -203,11 +196,20 @@ export default {
   created() {},
   mounted() {
     const self = this;
-
+    
     this.$store.commit("setRoomId", this.$route.params.id);
     this.$store.dispatch("getData");
 
-    interact("#scalable-table .draggable").draggable({
+    interact("#scalable-table").draggable({
+      listeners: {
+        move: function(event) {
+          event.target.style.marginLeft = (parseInt(event.target.style.marginLeft) || 0) + event.delta.x + "px";
+          event.target.style.marginTop = (parseInt(event.target.style.marginTop) || 0) + event.delta.y  + "px";
+        }
+      }
+    });
+
+    interact("#scalable-table .draggable, .hand .draggable").draggable({
       ignoreFrom: ".pinned",
       inertia: {
         resistance: 60
@@ -225,30 +227,6 @@ export default {
             params: {
               event,
               scale: self.scale
-            }
-          });
-        }
-      }
-    });
-
-    interact(".hand .draggable").draggable({
-      ignoreFrom: ".pinned",
-      inertia: {
-        resistance: 60
-      },
-      restrict: {
-        restriction: "parent",
-        endOnly: false,
-        elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
-      },
-      // autoScroll: true,
-      listeners: {
-        move: function(event) {
-          self.$store.dispatch("commitMutation", {
-            mutation: "moveObject",
-            params: {
-              event,
-              scale: 1
             }
           });
         }
@@ -291,6 +269,7 @@ export default {
   background-color: darkslategray;
   width: 6500px;
   height: 6500px;
+  padding: 500px;
 }
 
 #scalable-table {
@@ -299,6 +278,7 @@ export default {
   height: 5500px;
   transition: transform .1s;
   transform-origin: 0 0;
+  touch-action: none;
 }
 
 .draggable {
