@@ -5,18 +5,12 @@
     @keyup.prevent.81="rotateLeft"
     @keyup.prevent.69="rotateRight"
   >
-    <EditDialog
-      :showDialog="showEditDialog"
-      :object="selectedObject"
-      @closeEditDialog="showEditDialog = false"
-    />
-
+    <EditDialog :showDialog="showEditDialog" :object="selectedObject" @closeEditDialog="showEditDialog = false"/>
     <CreateDialog :showDialog="showCreateDialog" @closeCreateDialog="showCreateDialog = false" />
-    <RegisterDialog
-      :showDialog="showRegisterDialog"
-      @closeRegisterDialog="showRegisterDialog = false"
-    />
+    <RegisterDialog :showDialog="showRegisterDialog" @closeRegisterDialog="showRegisterDialog = false"/>
     <ImportDialog :showDialog="showImportDialog" @closeImportDialog="showImportDialog = false" />
+    <ChangeBackgroundDialog :showDialog="showChangeBackgroundDialog" @closeChangeBackgroundDialog="showChangeBackgroundDialog = false"/>
+    <SearchDialog :showDialog="showSearchDialog" :object="selectedObject" @closeSearchDialog="showSearchDialog = false"/>
 
     <div id="scalable-table" :style="scaleTableStyle" @mousewheel.prevent="tableScaleChange">
       <GameObject
@@ -26,6 +20,7 @@
         :data-id="object.id"
         :object="object"
         @showEditDialog="showEditDialogHandler"
+        @showSearchDialog="showSearchDialogHandler"
       />
     </div>
 
@@ -49,6 +44,7 @@
         <md-button class="md-icon-button" @click="showRegisterDialog = true"><i class="fas fa-door-open"/></md-button>
         <md-button class="md-icon-button" @click="leftRoom"><i class="fas fa-door-closed"/></md-button>
         <md-button class="md-icon-button" @click="showCreateDialog = true"><i class="fas fa-plus-circle"/></md-button>
+        <md-button class="md-icon-button" @click="showChangeBackgroundDialog = true"><i class="fas fa-file-image"/></md-button>
         <md-button class="md-icon-button" @click="exportGame"><i class="fas fa-download"/></md-button>
         <md-button class="md-icon-button" @click="showImportDialog = true"><i class="fas fa-upload"/></md-button>
       </md-speed-dial-content>
@@ -80,6 +76,8 @@ import EditDialog from "./overlay/EditDialog.vue";
 import CreateDialog from "./overlay/CreateDialog.vue";
 import RegisterDialog from "./overlay/RegisterDialog.vue";
 import ImportDialog from "./overlay/ImportDialog.vue";
+import ChangeBackgroundDialog from "./overlay/ChangeBackgroundDialog.vue";
+import SearchDialog from "./overlay/SearchDialog.vue";
 
 import { getSelectedIndexes } from "../utils/utils.js";
 
@@ -87,10 +85,13 @@ export default {
   name: "Table",
   components: {
     GameObject,
+
     EditDialog,
     CreateDialog,
     RegisterDialog,
-    ImportDialog
+    ImportDialog,
+    ChangeBackgroundDialog,
+    SearchDialog
   },
   data() {
     return {
@@ -98,6 +99,9 @@ export default {
       showCreateDialog: false,
       showRegisterDialog: false,
       showImportDialog: false,
+      showChangeBackgroundDialog: false,
+      showSearchDialog: false,
+
       selectedObject: null,
       toggleHand: true,
 
@@ -110,6 +114,7 @@ export default {
   computed: {
     scaleTableStyle() {
       return {
+        background: `url(${this.game.background})`,
         transform: `translate(${this.pos.x}px,${this.pos.y}px) scale(${this.scale},${this.scale})`,
         height: "100%",
         width: "100%"
@@ -180,6 +185,10 @@ export default {
       this.selectedObject = this.game.objects.find(obj => obj.id === id);
       this.showEditDialog = true;
     },
+    showSearchDialogHandler(id) {
+      this.selectedObject = this.game.objects.find(obj => obj.id === id);
+      this.showSearchDialog = true;
+    },
     exportGame() {
       const element = document.createElement("a");
       const url = element.setAttribute(
@@ -222,11 +231,12 @@ export default {
       // autoScroll: true,
       listeners: {
         move: function(event) {
+          const isHand = event.target.parentElement.className.includes("hand");
           self.$store.dispatch("commitMutation", {
             mutation: "moveObject",
             params: {
               event,
-              scale: self.scale
+              scale: isHand ? 1 : self.scale
             }
           });
         }

@@ -40,7 +40,6 @@ export default {
 
     if(store.state.sync==="full"){
       fb.on('value', function(snapshot) {
-        console.log(snapshot.val());
         let val = snapshot.val().game;
         store.commit('updateGame',{val});
       });
@@ -54,7 +53,6 @@ export default {
             id: "firstLoad",
             val: snapshot.val().game
           });
-          // store.commit('lobbyAdminUpdate', snapshot.val().creator);
         });
       }
 
@@ -85,11 +83,6 @@ export default {
       
       //players changed
       fb.child('/game/players').on("value", function(snapshot){
-        // console.log(snapshot)
-        // store.commit('updateGame', {
-        //   id: "players",
-        //   val: snapshot.val()
-        // });
         load();
       });
 
@@ -100,18 +93,13 @@ export default {
           val: snapshot.val()
         });
       });
-
-      //imported
-      fb.child('/game/imported').on("value", function(snapshot){
-        load();
-      });
     }
 
   },
 
   commitMutation({commit, dispatch}, {mutation, params}) {
     commit(mutation, params);
-    if (["deleteObject", "putObjectToContainer"].includes(mutation)) {
+    if (["deleteObject", "putObjectToContainer", "updateBackground"].includes(mutation)) {
       dispatch("putData");
     } else {
       dispatch("updateObjects");
@@ -154,7 +142,6 @@ export default {
 
   leftRoom(store, uid) {
     const roomId = store.state.roomId;
-    console.log(Object.entries(store.state.game.players))
     const userKv = Object.entries(store.state.game.players).find(kv => kv[1].uid === uid);
     if (userKv) {
       firebase.database().ref(`/room/${roomId}/game/players/${userKv[0]}`).remove();
