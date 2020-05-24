@@ -1,5 +1,6 @@
 import Vue from "vue";
 import uniqid from "uniqid";
+import cloneDeep from "clone-deep";
 import { getZ } from "../utils/utils.js";
 
 const ROTATION_STEP = 15;
@@ -46,6 +47,17 @@ export default {
     }
     createdDeck.new = true;
     objects.push(createdDeck);
+  },
+
+  copyObject(state, containerId) {
+    const object = state.game.objects.find(c => c.id === containerId);
+    const clone = cloneDeep(object)
+    clone.x = object.x + 25;
+    clone.y = object.y + 25;
+    clone.z = getZ(),
+    clone.id = uniqid(),
+    state.game.objects.push(clone);
+    clone.new = true;
   },
 
   createContainer(state, params) {
@@ -147,20 +159,40 @@ export default {
     container.new = true;
   },
 
-  takeObjectFromContainerToHand(state, containerId) {
-    const container = state.game.objects.find(c => c.id === containerId);
-    if (container.objects && container.objects.length > 0) {
-      const object = container.objects.pop();
-
-      object.x = 0;
-      object.y = 0;
-      object.z = 0;
-      object.owner = state.user.uid;
-      object.new = true;
-      state.game.objects.push(object);
-      container.new = true;
+  deal(state, params) {
+    const {containerId, playerIds} = params;
+    const dealObject = state.game.objects.find(c => c.id === containerId);
+    //Check if deal object is not a container
+    if (dealObject.type !== "container") {
+      dealObject.x = 0;
+      dealObject.y = 0;
+      dealObject.z = 0;
+      dealObject.isFlipped = false;
+      dealObject.owner = playerIds[0];
+      dealObject.new = true;
+    } else {
+      playerIds.forEach(playerId => {
+        if (dealObject.objects && dealObject.objects.length > 0) {
+          const object = dealObject.infinite 
+            ? dealObject.objects[0]
+            : dealObject.objects.pop();
+          if (object) {
+            if (dealObject.infinite) {
+              object.id = uniqid();
+            }
+      
+            object.x = 0;
+            object.y = 0;
+            object.z = 0;
+            object.isFlipped = false;
+            object.owner = playerId;
+            object.new = true;
+            state.game.objects.push(object);
+            dealObject.new = true;
+          }
+        }
+      });
     }
-    state.selectedIndexes = [];
   },
 
   putObjectToContainer(state, params) {
@@ -221,9 +253,10 @@ export default {
   playObject(state, objectId) {
     const object = state.game.objects.find(obj => obj.id === objectId)
     if (object.owner === state.user.uid) {
+      const table = window.document.querySelector("#scalable-table");
       object.owner = "";
-      object.x = window.scrollX + 100;
-      object.y = window.scrollY + 100;
+      object.x = -parseInt(table.style.marginLeft) + 100;
+      object.y = -parseInt(table.style.marginTop) + 100;
       object.z = 100000020;
       object.new = true;
     }
@@ -233,6 +266,17 @@ export default {
     const object = state.game.objects.find(obj => obj.id === objectId)
     object.isFlipped = !object.isFlipped
     object.new = true;
+  },
+
+  flipDeck(state, objectId) {
+    const deck = state.game.objects.find(obj => obj.id === objectId)
+    deck.isFlipped = !deck.isFlipped
+    deck.objects.reverse();
+    deck.objects = deck.objects.map(card => {
+      card.isFlipped = !card.isFlipped;
+      return card
+    })
+    deck.new = true;
   },
 
   pinObject(state, objectId) {

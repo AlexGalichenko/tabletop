@@ -25,24 +25,39 @@
     <!-- Context Menu -->
     <md-menu md-size="big" md-direction="bottom-start" :md-active.sync="showContextMenu">
       <md-menu-content>
+        <md-menu-item @click="showDealDropdown = !showDealDropdown">Deal</md-menu-item>
         <md-menu-item v-if="cardLike" @click="flip">Flip</md-menu-item>
-        <md-menu-item v-if="cardLike" @click="draw">Draw</md-menu-item>
         <md-menu-item v-if="cardLike" @click="play">Play</md-menu-item>
         <md-menu-item v-if="dice" @click="roll">Roll</md-menu-item>
         <md-menu-item @click="pin">{{pinned}}</md-menu-item>
 
         <md-menu-item v-if="container" @click="takeObjectFromContainer">Take From Container</md-menu-item>
-        <md-menu-item
-          v-if="container"
-          @click="takeObjectFromContainerToHand"
-        >Take From Container To Hand</md-menu-item>
         <md-menu-item v-if="container" @click="shuffleContainer">Shuffle</md-menu-item>
 
         <md-menu-item v-if="counter" @click="set0">Set 0</md-menu-item>
         <md-menu-item @click="rotateLeft">&lt;</md-menu-item>
         <md-menu-item @click="rotateRight">&gt;</md-menu-item>
         <md-menu-item @click="$emit('showEditDialog', id)">Edit</md-menu-item>
+        <md-menu-item @click="copyObject">Copy</md-menu-item>
         <md-menu-item @click="deleteObject">Delete Object</md-menu-item>
+      </md-menu-content>
+    </md-menu>
+
+    <md-menu
+      :md-active="showDealDropdown"
+      @md-closed="showDealDropdown = false"
+      :md-close-on-select="false"
+      :md-close-on-click="false"
+    >
+      <md-menu-content>
+        <md-menu-item @click="deal($parent.players.map(p => p.uid))">All</md-menu-item>
+        <md-menu-item
+          v-for="player in $parent.players"
+          :key="'player' + player.displayName"
+          @click="deal([player.uid])"
+        >
+          <span :style="'color:' + player.color">{{player.displayName}}</span>
+        </md-menu-item>
       </md-menu-content>
     </md-menu>
   </div>
@@ -62,7 +77,8 @@ export default {
   data() {
     return {
       selected: false,
-      showContextMenu: false
+      showContextMenu: false,
+      showDealDropdown: false
     };
   },
   computed: {
@@ -286,10 +302,13 @@ export default {
         params: this.id
       });
     },
-    takeObjectFromContainerToHand() {
+    deal(playerIds) {
       this.$store.dispatch("commitMutation", {
-        mutation: "takeObjectFromContainerToHand",
-        params: this.id
+        mutation: "deal",
+        params: {
+          containerId: this.id,
+          playerIds: playerIds
+        }
       });
     },
     shuffleContainer() {
@@ -301,6 +320,12 @@ export default {
     deleteObject() {
       this.$store.dispatch("commitMutation", {
         mutation: "deleteObject",
+        params: this.id
+      });
+    },
+    copyObject() {
+      this.$store.dispatch("commitMutation", {
+        mutation: "copyObject",
         params: this.id
       });
     },
@@ -339,7 +364,9 @@ export default {
   font-size: 20px;
   border: black solid 1px;
 }
-.counter .value, .counter .minus, .counter .plus {
+.counter .value,
+.counter .minus,
+.counter .plus {
   display: table-cell;
   position: relative;
   text-align: center;
@@ -347,10 +374,12 @@ export default {
   height: 49px;
   width: 49px;
 }
-.counter .minus, .counter .plus {
+.counter .minus,
+.counter .plus {
   cursor: pointer;
 }
-.counter .minus:hover, .counter .plus:hover {
+.counter .minus:hover,
+.counter .plus:hover {
   background-color: dimgray;
 }
 .counter .minus {

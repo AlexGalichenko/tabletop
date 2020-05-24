@@ -22,6 +22,8 @@
   },
   "homepage": "https://github.com/AlexGalichenko/tabletop#readme",
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.13.0",
+    "clone-deep": "^4.0.1",
     "firebase": "^7.14.3",
     "install": "^0.13.0",
     "interactjs": "^1.9.14",
