@@ -12,7 +12,7 @@
     <ChangeBackgroundDialog :showDialog="showChangeBackgroundDialog" @closeChangeBackgroundDialog="showChangeBackgroundDialog = false"/>
     <SearchDialog :showDialog="showSearchDialog" :object="selectedObject" @closeSearchDialog="showSearchDialog = false"/>
 
-    <div id="scalable-table" :style="scaleTableStyle" @mousewheel.prevent="tableScaleChange">
+    <div id="scalable-table" :style="scaleTableStyle" @mousewheel.prevent="zoomTable">
       <GameObject
         v-for="(object, index) in ownerless"
         :key="index"
@@ -51,13 +51,11 @@
     </md-speed-dial>
 
     <div :class="handClass">
-      <GameObject
+      <HandGameObject
         v-for="(object, index) in ownerfull"
         :key="index"
         :id="object.id"
-        :data-id="object.id"
         :object="object"
-        @showEditDialog="showEditDialogHandler"
       />
       <md-button
         class="md-primary expand"
@@ -72,6 +70,8 @@ import interact from "interactjs";
 import uniqid from "uniqid";
 
 import GameObject from "./GameObject.vue";
+import HandGameObject from "./HandGameObject.vue";
+
 import EditDialog from "./overlay/EditDialog.vue";
 import CreateDialog from "./overlay/CreateDialog.vue";
 import RegisterDialog from "./overlay/RegisterDialog.vue";
@@ -85,6 +85,7 @@ export default {
   name: "Table",
   components: {
     GameObject,
+    HandGameObject,
 
     EditDialog,
     CreateDialog,
@@ -105,19 +106,17 @@ export default {
       selectedObject: null,
       toggleHand: true,
 
-      scale: 1,
-      pos: { x: 0, y: 0 },
-      zoomTarget: { x: 0, y: 0 },
-      zoomPoint: { x: 0, y: 0 }
+      tableX: 0,
+      tableY: 0,
+
+      scale: 1
     };
   },
   computed: {
     scaleTableStyle() {
       return {
         background: `url(${this.game.background})`,
-        transform: `translate(${this.pos.x}px,${this.pos.y}px) scale(${this.scale},${this.scale})`,
-        height: "100%",
-        width: "100%"
+        transform: `translate(${this.tableX}px,${this.tableY}px) scale(${this.scale}) translateZ(0)`,
       };
     },
     ownerfull() {
@@ -144,36 +143,8 @@ export default {
     }
   },
   methods: {
-    tableScaleChange(event) {
-      const MAX_SCALE = 4;
-      const FACTOR = 0.3;
-      const target = window.document.querySelector("#scalable-table");
-      const size = {
-        w: 6500,
-        h: 6500,
-      };
-      this.zoomPoint.x = event.pageX - target.offsetLeft;
-      this.zoomPoint.y = event.pageY - target.offsetTop;
-
-      var delta = event.deltaY;
-      if (delta === undefined) {
-        delta = event.originalEvent.detail;
-      }
-      delta = Math.max(-1, Math.min(1, delta)); // cap the delta to [-1,1] for cross browser consistency
-
-      this.zoomTarget.x = (this.zoomPoint.x - this.pos.x) / this.scale;
-      this.zoomTarget.y = (this.zoomPoint.y - this.pos.y) / this.scale;
-
-      this.scale += -delta * FACTOR * this.scale;
-      this.scale = Math.max(1, Math.min(MAX_SCALE, this.scale));
-      this.pos.x = -this.zoomTarget.x * this.scale + this.zoomPoint.x;
-      this.pos.y = -this.zoomTarget.y * this.scale + this.zoomPoint.y;
-      if (this.pos.x > 0) this.pos.x = 0;
-      if (this.pos.x + size.w * this.scale < size.w)
-        this.pos.x = -size.w * (this.scale - 1);
-      if (this.pos.y > 0) this.pos.y = 0;
-      if (this.pos.y + size.h * this.scale < size.h)
-        this.pos.y = -size.h * (this.scale - 1);
+    zoomTable(event) {
+      this.scale -= event.deltaY / 1000;
     },
     register() {
       this.$store.dispatch("registerPlayer", this.$store.state.user);
@@ -209,16 +180,16 @@ export default {
     this.$store.commit("setRoomId", this.$route.params.id);
     this.$store.dispatch("getData");
 
-    interact("#scalable-table").draggable({
-      listeners: {
-        move: function(event) {
-          event.target.style.marginLeft = (parseInt(event.target.style.marginLeft) || 0) + event.delta.x + "px";
-          event.target.style.marginTop = (parseInt(event.target.style.marginTop) || 0) + event.delta.y  + "px";
-        }
-      }
-    });
+    // interact("#scalable-table").draggable({
+    //   listeners: {
+    //     move: function(event) {
+    //       self.tableX += event.delta.x;
+    //       self.tableY += event.delta.y;
+    //     }
+    //   }
+    // });
 
-    interact("#scalable-table .draggable, .hand .draggable").draggable({
+    interact(".draggable").draggable({
       ignoreFrom: ".pinned",
       inertia: {
         resistance: 60
@@ -228,15 +199,13 @@ export default {
         endOnly: false,
         elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
       },
-      // autoScroll: true,
       listeners: {
         move: function(event) {
-          const isHand = event.target.parentElement.className.includes("hand");
           self.$store.dispatch("commitMutation", {
             mutation: "moveObject",
             params: {
               event,
-              scale: isHand ? 1 : self.scale
+              scale: self.scale
             }
           });
         }
@@ -286,8 +255,6 @@ export default {
   background-color: rebeccapurple;
   width: 5500px;
   height: 5500px;
-  transition: transform .1s;
-  transform-origin: 0 0;
   touch-action: none;
 }
 
@@ -295,6 +262,7 @@ export default {
   position: absolute;
   touch-action: none;
 }
+
 .drop-target .drop-relatedTarget {
   border: 2px solid gray;
 }
@@ -311,7 +279,10 @@ export default {
   width: 80vw;
   left: 10vw;
   background: rgba(0, 0, 0, 0.1);
+  transform: translateZ(0);
   z-index: 100000000;
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
 
 .hand.expanded {

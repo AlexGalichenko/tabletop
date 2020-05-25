@@ -27,7 +27,6 @@
       <md-menu-content>
         <md-menu-item @click="showDealDropdown = !showDealDropdown">Deal</md-menu-item>
         <md-menu-item v-if="cardLike" @click="flip">Flip</md-menu-item>
-        <md-menu-item v-if="cardLike" @click="play">Play</md-menu-item>
         <md-menu-item v-if="dice" @click="roll">Roll</md-menu-item>
         <md-menu-item @click="pin">{{pinned}}</md-menu-item>
 
@@ -79,7 +78,7 @@ export default {
     return {
       selected: false,
       showContextMenu: false,
-      showDealDropdown: false
+      showDealDropdown: false,
     };
   },
   computed: {
@@ -101,7 +100,7 @@ export default {
           ? "infinite"
           : "";
       const pinned = this.object.isPinned ? "pinned" : "";
-      return `draggable ${this.object.type} ${pinned} ${infinite}`;
+      return `game-object draggable ${this.object.type} ${pinned} ${infinite}`;
     },
     style() {
       switch (this.object.type) {
@@ -124,26 +123,18 @@ export default {
           this.$store.state.user &&
           this.object.owner !== this.$store.state.user.uid);
       const background = isFlipped ? this.object.backUrl : this.object.url;
-      const border = this.object.owner && this.$store.state.user && this.object.owner !== this.$store.state.user.uid
-          ? "2px solid gray"
-          : this.$store.state.user && this.object.owner === this.$store.state.user.uid
-            ? "2px solid green"
-            : "0px";
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
 
       return {
-        border: border,
-        "box-shadow": shadow,
         "background-image": `url('${background}')`,
         "background-size": "100% 100%",
         "background-position": "100% 100%",
-        "min-height": `${this.object.height}px`,
-        "min-width": `${this.object.width}px`,
+        "height": `${this.object.height}px`,
+        "width": `${this.object.width}px`,
         "z-index": this.object.z || 0,
-        transform: `${translate} ${rotate} ${scale}`
+        transform: `${translate} ${rotate} ${scale} translateZ(0)`
       };
     },
     cardStyle() {
@@ -153,23 +144,11 @@ export default {
           this.$store.state.user &&
           this.object.owner !== this.$store.state.user.uid);
       const background = isFlipped ? this.object.backUrl : this.object.url;
-      const border =
-        this.object.owner &&
-        this.$store.state.user &&
-        this.object.owner !== this.$store.state.user.uid
-          ? "2px solid gray"
-          : this.$store.state.user &&
-            this.object.owner === this.$store.state.user.uid
-          ? "2px solid green"
-          : "0px";
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
 
       return {
-        border: border,
-        "box-shadow": shadow,
         "background-image": `url('${background}')`,
         "border-radius": "10px",
         "background-size": isFlipped
@@ -178,22 +157,20 @@ export default {
         "background-position": isFlipped
           ? "100% 100%"
           : `${this.object.column * 100}% ${this.object.row * 100}%`,
-        "min-height": `${this.object.height}px`,
-        "min-width": `${this.object.width}px`,
+        "height": `${this.object.height}px`,
+        "width": `${this.object.width}px`,
         "z-index": this.object.z || 0,
-        transform: `${translate} ${rotate} ${scale}`
+        transform: `${translate} ${rotate} ${scale} translateZ(0)`
       };
     },
     containerStyle() {
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       return {
-        "box-shadow": shadow,
         "background-image": `url('${this.object.url}')`,
-        "min-height": `${this.object.height}px`,
-        "min-width": `${this.object.width}px`,
+        "height": `${this.object.height}px`,
+        "width": `${this.object.width}px`,
         "background-size": "100% 100%",
         "z-index": this.object.z || 0,
         transform: `${translate} ${rotate} ${scale}`
@@ -203,9 +180,7 @@ export default {
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       return {
-        "box-shadow": shadow,
         "z-index": this.object.z || 0,
         transform: `${translate} ${rotate} ${scale}`
       };
@@ -214,10 +189,8 @@ export default {
       const translate = `translate(${this.object.x}px,${this.object.y}px)`;
       const rotate = `rotate(${this.object.rotation}deg)`;
       const scale = `scale(${this.object.scale})`;
-      const shadow = `red 0px 0px ${this.selected ? 10 : 0}px`;
       return {
         border: "black solid 1px",
-        "box-shadow": shadow,
         "z-index": this.object.z || 0,
         height: "50px",
         width: "50px",
@@ -272,12 +245,6 @@ export default {
     draw() {
       this.$store.dispatch("commitMutation", {
         mutation: "drawObject",
-        params: this.id
-      });
-    },
-    play() {
-      this.$store.dispatch("commitMutation", {
-        mutation: "playObject",
         params: this.id
       });
     },
@@ -338,6 +305,10 @@ export default {
 </script>
 
 <style scoped>
+.game-object:hover {
+    box-shadow: red 0px 0px 10px;
+}
+
 .container .value {
   background-color: gray;
 }
@@ -346,7 +317,7 @@ export default {
   border-radius: 5px;
 }
 
-.dice .value {
+.dice > .value {
   position: absolute;
   font-size: 45px;
   top: 16px;

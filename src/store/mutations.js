@@ -277,13 +277,13 @@ export default {
     object.new = true;
   },
 
-  playObject(state, objectId) {
+  playObject(state, params) {
+    const {objectId, x, y} = params;
     const object = state.game.objects.find(obj => obj.id === objectId)
     if (object.owner === state.user.uid) {
       object.owner = "";
-      const table = window.document.querySelector("#scalable-table");
-      object.x = -parseInt(table.style.marginLeft) + 100;
-      object.y = -parseInt(table.style.marginTop) + 100;
+      object.x = x + 100;
+      object.y = y + 100;
       object.z = 100000020;
       object.new = true;
     }
@@ -333,10 +333,8 @@ export default {
     const target = event.target;
     const dataId = target.getAttribute("data-id");
     const obj = state.game.objects.find(object => object.id === dataId);
-    const x = (parseFloat(obj.x) || 0) + event.dx / scale;
-    const y = (parseFloat(obj.y) || 0) + event.dy / scale;
-    obj.x = x;
-    obj.y = y;
+    obj.x = (parseFloat(obj.x) || 0) + event.dx / scale;
+    obj.y = (parseFloat(obj.y) || 0) + event.dy / scale;
     obj.z = getZ();
     obj.new = true;
   },

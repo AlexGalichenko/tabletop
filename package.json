@@ -25,7 +25,6 @@
     "@fortawesome/fontawesome-free": "^5.13.0",
     "clone-deep": "^4.0.1",
     "firebase": "^7.14.3",
-    "install": "^0.13.0",
     "interactjs": "^1.9.14",
     "uniqid": "^5.2.0",
     "vue": "^2.6.11",
